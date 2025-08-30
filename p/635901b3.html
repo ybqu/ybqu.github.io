@@ -30,7 +30,7 @@
 <meta property="og:description" content="对于机器学习或者深度学习的模型，都需要将文本转换为数字序列作为输入，通常需要一个合适的词表。Tokenization是将文本切分成词典中的词，从而得到用词典的index表示的数字序列。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-08-30T08:49:50.000Z">
-<meta property="article:modified_time" content="2025-08-30T10:00:53.977Z">
+<meta property="article:modified_time" content="2025-08-30T10:29:47.978Z">
 <meta property="article:author" content="DouDou.Ybqu">
 <meta property="article:tag" content="Transformers">
 <meta property="article:tag" content="Tokenization">
@@ -162,7 +162,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -175,7 +175,6 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text">Tokenization的发展</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#A-%E8%AF%8D%E7%B2%92%E5%BA%A6-Word-based"><span class="nav-number">1.1.</span> <span class="nav-text">A. 词粒度 Word-based</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#B-%E5%AD%97%E7%B2%92%E5%BA%A6-Character-based"><span class="nav-number">1.2.</span> <span class="nav-text">B. 字粒度 Character-based</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C-%E5%AD%90%E8%AF%8D%E7%B2%92%E5%BA%A6%EF%BC%9ASubword"><span class="nav-number">1.3.</span> <span class="nav-text">C. 子词粒度：Subword</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">2.</span> <span class="nav-text">常用Tokenize方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#A-Byte-Pair-Encoding-BPE"><span class="nav-number">2.1.</span> <span class="nav-text">A. Byte-Pair Encoding (BPE)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BPE"><span class="nav-number">2.1.1.</span> <span class="nav-text">BPE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Byte-level-BPE"><span class="nav-number">2.1.2.</span> <span class="nav-text">Byte-level BPE</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#B-Wordpiece"><span class="nav-number">2.2.</span> <span class="nav-text">B. Wordpiece</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C-Unigram-language-modeling-UniLM"><span class="nav-number">2.3.</span> <span class="nav-text">C. Unigram language modeling (UniLM)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#D-Sentencepiece"><span class="nav-number">2.4.</span> <span class="nav-text">D. Sentencepiece</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A9%E5%B1%95%E9%97%AE%E9%A2%98%EF%BC%9A"><span class="nav-number">2.4.1.</span> <span class="nav-text">扩展问题：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">2.4.2.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -269,7 +268,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2025-08-30 16:49:50 / 修改时间：18:00:53" itemprop="dateCreated datePublished" datetime="2025-08-30T16:49:50+08:00">2025-08-30</time>
+      <time title="创建时间：2025-08-30 16:49:50 / 修改时间：18:29:47" itemprop="dateCreated datePublished" datetime="2025-08-30T16:49:50+08:00">2025-08-30</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -292,14 +291,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>9.1k</span>
+      <span>92</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>17 分钟</span>
+      <span>1 分钟</span>
     </span>
 </div>
 
@@ -309,185 +308,8 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><hr>
-<p>对于机器学习或者深度学习的模型，都需要将文本转换为数字序列作为输入，通常需要一个合适的词表。Tokenization是将文本切分成词典中的词，从而得到用词典的index表示的数字序列。</p>
+    <div class="post-body" itemprop="articleBody"><p>对于机器学习或者深度学习的模型，都需要将文本转换为数字序列作为输入，通常需要一个合适的词表。Tokenization是将文本切分成词典中的词，从而得到用词典的index表示的数字序列。</p>
 <span id="more"></span>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Tokenization的难点</span><br><span class="line"></span><br><span class="line"><span class="number">1.</span> 切分的粒度</span><br><span class="line">    - State-of-the-art 是一个词？还是切分成<span class="number">4</span>个？</span><br><span class="line">    - 清华大学 是作为一个词，还是“清华” + “大学”，甚至是“清” +“华” +“大” +“学”</span><br><span class="line"><span class="number">2.</span> 切分导致的歧义</span><br><span class="line">    - 南京市/长江/大桥</span><br><span class="line">    - 南京/市长/江大桥</span><br><span class="line">    - 广州市/长隆/马戏/欢迎您</span><br><span class="line">    - 广州/市长/隆马戏/欢迎您</span><br><span class="line"><span class="number">3.</span> 数字怎么处理</span><br><span class="line">    - <span class="number">20</span>/<span class="number">07</span>/<span class="number">2024</span></span><br><span class="line">    - <span class="number">1388888888</span></span><br><span class="line"><span class="number">4.</span> 不同语言的特性</span><br><span class="line">    - 拉丁语系可以用空格来区分，但是中文和日文没有空格</span><br><span class="line">    - 波斯语和阿拉伯语从右往左写，而且有些能连写。</span><br></pre></td></tr></table></figure>
-<h1>Tokenization的发展</h1>
-<blockquote>
-<p>大概有三个阶段：词粒度、字粒度和 Subword 粒度</p>
-</blockquote>
-<h2 id="A-词粒度-Word-based">A. 词粒度 Word-based</h2>
-<p>每一个token是词典中的一个词</p>
-<ul>
-<li>对于拉丁语系很简单，按照空格和标点符号分割即可</li>
-<li>对于中文日文，则需要专门进行分词，比如中文分词一般都用jieba，哈工大的LTP等</li>
-</ul>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">中文的分词可以抽象为一个序列标注问题，所以这些分词方法会使用词典索引，或者HMM，双向GRU等模型来进行分词。虽然BERT甚至大模型也能很好的完成这个任务，但是由于分词是一个非常频繁的操作，效率也很重要，所以一般不会使用太复杂的模型来做。</span><br></pre></td></tr></table></figure>
-<p>优点：</p>
-<ul>
-<li>符合人类的直觉，词的含义完备</li>
-<li>对于英文来说实现很简单</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li>如何构造一份好的词典，以及词典过大的问题</li>
-<li>OOV（Out of Vocabulary）问题，对于词典中没有词一般会分配一个统一来处理，信息丢失</li>
-<li>同义词和误拼会被认为是不同的词。比如do not和don’t虽然含义一样，但是最终的id不一样。类似的还有词的不同形态，比如have, has, had, having等</li>
-<li>词典中的词没有任何关联，低频词不会得到充分的训练。比如oarfish，这个词虽然第一眼可能不知道什么意思，但是能猜出是一种鱼（皇带鱼）</li>
-</ul>
-<h2 id="B-字粒度-Character-based">B. 字粒度 Character-based</h2>
-<p>把文本按照最小粒度来拆分</p>
-<ul>
-<li>对于英文来说就是26个字母加上一些标点符号</li>
-<li>中文来说就是字</li>
-</ul>
-<p>优点：</p>
-<ul>
-<li>实现简单</li>
-<li>词典很小</li>
-<li>几乎没有OOV（Out of Vocabulary）问题</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li>对于英文来说，单个字母几乎没有含义</li>
-<li>难以学习到词汇的真正含义。由于中文的一个字还是有一定的含义，所以在中文勉强可以使用，但是英文几乎没法使用</li>
-<li>会让输入变得很长，训练和推理更慢</li>
-</ul>
-<h2 id="C-子词粒度：Subword">C. 子词粒度：Subword</h2>
-<p>Subword Tokenization 可以认为是上面两种方法的一个中间态。其设计理念为：</p>
-<ol>
-<li>词典中的每一个token都有语义。</li>
-<li>常用的词汇尽量不要分割</li>
-<li>不常用的词汇可以拆分成常用的、有意义的字词(Subword)</li>
-</ol>
-<p>优点：</p>
-<ul>
-<li>几乎没有OOV Out of Vocabulary）问题</li>
-<li>有泛化能力。即使训练样本中未出现的词，也能通过subword来理解，因为subword能够捕获一些语言上词根的含义</li>
-<li>词典的大小可以控制</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li>新技术还需要一些验证和探索</li>
-<li>对英文支持很好，但是对中文来说没有起到类似英文的Subword效果。因为中文也可以进一步拆分，比如“钅” 一般都跟金属有关，“犭”一般都跟动物有关。目前的中文的处理粒度还没有这么细致</li>
-</ul>
-<h1>常用Tokenize方法</h1>
-<h2 id="A-Byte-Pair-Encoding-BPE">A. Byte-Pair Encoding (BPE)</h2>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/1508.07909">Neural Machine Translation of Rare Words with Subword Units</a></p>
-</blockquote>
-<h3 id="BPE">BPE</h3>
-<blockquote>
-<p>核心思想在于将最常出现的子词对合并，直到词汇表达到预定的大小时停止</p>
-</blockquote>
-<ol>
-<li>准备语料$D$，词表大小$V$</li>
-<li>使用预分词器pretokenizer来完成初步的切分（pretokenizer可以是简单基于空格的，也可以是基于规则的），比如英文拆分为26个英文字母，且每个单词的结尾处添加 &quot;&lt;/w&gt;&quot;进行标识</li>
-<li>统计每个单词的频率；<strong>【到这初始化就完成了，此时的词表中全部都是单个字母】</strong></li>
-<li>统计所有2-gram的组合token，将词频最高的组合token添加到词表中</li>
-<li>检测被合并的那两个token，如果某个token在整个语料中都没有再出现过，那么就从词表中移除</li>
-<li>重复上述第4步和第5步，直到词表的数量达到预设定的大小$V$</li>
-<li>&lt;得到词表之后，将词表中所有的词按照长度进行降序排列&gt;</li>
-</ol>
-<hr>
-<p>示例：</p>
-<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">D</span> = &#123;<span class="string">&#x27;low&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;lower&#x27;</span>:<span class="number">2</span>,<span class="string">&#x27;newest&#x27;</span>:<span class="number">6</span>,<span class="string">&#x27;widest&#x27;</span>:<span class="number">3</span>&#125;</span><br></pre></td></tr></table></figure>
-<p>经过1、2、3步后得到初始的词表：<br>
-语料词频：</p>
-<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#x27;l o w &lt;/w&gt;&#x27;<span class="punctuation">:</span> <span class="number">5</span></span><br><span class="line">&#x27;l o w e r &lt;/w&gt;&#x27;<span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line">&#x27;n e w e s t &lt;/w&gt;&#x27;<span class="punctuation">:</span> <span class="number">6</span></span><br><span class="line">&#x27;w i d e s t &lt;/w&gt;&#x27;<span class="punctuation">:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
-<p>词表：</p>
-<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#x27;l&#x27;<span class="punctuation">,</span> &#x27;o&#x27;<span class="punctuation">,</span> &#x27;w&#x27;<span class="punctuation">,</span> &#x27;e&#x27;<span class="punctuation">,</span> &#x27;r&#x27;<span class="punctuation">,</span> &#x27;n&#x27;<span class="punctuation">,</span> &#x27;s&#x27;<span class="punctuation">,</span> &#x27;t&#x27;<span class="punctuation">,</span> &#x27;i&#x27;<span class="punctuation">,</span> &#x27;d&#x27;<span class="punctuation">,</span> &#x27;&lt;/w&gt;&#x27;&#125;</span><br></pre></td></tr></table></figure>
-<p>重复4、5步直到满足停止条件：</p>
-<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">step 1:</span><br><span class="line"><span class="bullet">- </span>最多的组合为 es, 出现了9次，</span><br><span class="line"><span class="section">- 添加token: es, 语料中已经不存在 &#x27;s&#x27; 了，从词表中去除 &#x27;s&#x27;</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"><span class="section">+ 词表：&#123;&#x27;l&#x27;, &#x27;o&#x27;, &#x27;w&#x27;, &#x27;e&#x27;, &#x27;r&#x27;, &#x27;n&#x27;, &#x27;t&#x27;, &#x27;i&#x27;, &#x27;d&#x27;, &#x27;&lt;/w&gt;&#x27;, &#x27;es&#x27;&#125;</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line">step 2:</span><br><span class="line"><span class="bullet">- </span>最多的组合为 est, 出现了9次</span><br><span class="line"><span class="section">- 添加token: est, 语料中已经不存在 &#x27;es&#x27; 和 &#x27;t&#x27;了，从词表中去除 &#x27;es&#x27; 和 &#x27;t&#x27;</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"><span class="section">+ 词表：&#123;&#x27;l&#x27;, &#x27;o&#x27;, &#x27;w&#x27;, &#x27;e&#x27;, &#x27;r&#x27;, &#x27;n&#x27;, &#x27;i&#x27;, &#x27;d&#x27;, &#x27;&lt;/w&gt;&#x27;, &#x27;est&#x27;&#125;</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"><span class="bullet">... </span>...</span><br></pre></td></tr></table></figure>
-<hr>
-<p><strong>编码（Encode）</strong><br>
-编码时，遍历排好序的词表，查找词表中是否有是当前单词的子字符串的子词</p>
-<ul>
-<li>如果有，那么这个子词就作为表示该单词的 token 之一，原单词中除去该子词之后剩余的部分继续遍历排好序的词表</li>
-<li>当所有的词表都遍历完了之后，如果依然有子字符串没有匹配上词表中的任何子词，那么就使用&lt;\UNK&gt;表示该部分</li>
-</ul>
-<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># 给定输入文本</span><br><span class="line">the highest mountain</span><br><span class="line"></span><br><span class="line"># 转为单词序列</span><br><span class="line">[<span class="string">&quot;the&lt;/w&gt;&quot;</span>, <span class="string">&quot;highest&lt;/w&gt;&quot;</span>, <span class="string">&quot;mountain&lt;/w&gt;&quot;</span>]</span><br><span class="line"></span><br><span class="line"># 假设已有排好序的词表</span><br><span class="line">[<span class="string">&quot;errrr&lt;/w&gt;&quot;</span>, <span class="string">&quot;tain&lt;/w&gt;&quot;</span>, <span class="string">&quot;moun&quot;</span>, <span class="string">&quot;est&lt;/w&gt;&quot;</span>, <span class="string">&quot;high&quot;</span>, <span class="string">&quot;the&lt;/w&gt;&quot;</span>, <span class="string">&quot;a&lt;/w&gt;&quot;</span>]</span><br><span class="line"></span><br><span class="line"># 每个单词的编码结果</span><br><span class="line"><span class="string">&quot;the&lt;/w&gt;&quot;</span> -&gt; [<span class="string">&quot;the&lt;/w&gt;&quot;</span>]</span><br><span class="line"><span class="string">&quot;highest&lt;/w&gt;&quot;</span> -&gt; [<span class="string">&quot;high&quot;</span>, <span class="string">&quot;est&lt;/w&gt;&quot;</span>]</span><br><span class="line"><span class="string">&quot;mountain&lt;/w&gt;&quot;</span> -&gt; [<span class="string">&quot;moun&quot;</span>, <span class="string">&quot;tain&lt;/w&gt;&quot;</span>]</span><br><span class="line"></span><br><span class="line"># 输入文本编码后的token序列</span><br><span class="line">[<span class="string">&quot;the&lt;/w&gt;&quot;</span>, <span class="string">&quot;high&quot;</span>, <span class="string">&quot;est&lt;/w&gt;&quot;</span>, <span class="string">&quot;moun&quot;</span>, <span class="string">&quot;tain&lt;/w&gt;&quot;</span>]</span><br></pre></td></tr></table></figure>
-<p><strong>解码（Decode）</strong></p>
-<ul>
-<li>如果 token 是以 &lt;/w&gt; 结尾的，说明这是一个单词的结尾</li>
-<li>如果 token 不是以 &lt;/w&gt; 结尾的，说明这个 token 需要和其后面的 token 拼接起来构成单词</li>
-</ul>
-<blockquote>
-<p>整体来看，就等同于把 &lt;/w&gt; 替换成空格之后，直接把全部 token 拼接成一个字符串。</p>
-</blockquote>
-<hr>
-<p>代码实现：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> defaultdict, Counter</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_stats</span>(<span class="params">vocab</span>):</span><br><span class="line">    pairs = defaultdict(<span class="built_in">int</span>)</span><br><span class="line">    <span class="keyword">for</span> word, freq <span class="keyword">in</span> vocab.items():</span><br><span class="line">        symbols = word.split()</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(symbols) - <span class="number">1</span>):</span><br><span class="line">            pairs[symbols[i], symbols[i+<span class="number">1</span>]] += freq</span><br><span class="line">    <span class="keyword">return</span> pairs</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">merge_vocab</span>(<span class="params">pair, v_in</span>):</span><br><span class="line">    v_out = &#123;&#125;</span><br><span class="line">    bigram = re.escape(<span class="string">&#x27; &#x27;</span>.join(pair))</span><br><span class="line">    p = re.<span class="built_in">compile</span>(<span class="string">r&#x27;(?&lt;!\S)&#x27;</span> + bigram + <span class="string">r&#x27;(?!\S)&#x27;</span>)</span><br><span class="line">    <span class="keyword">for</span> word, freq <span class="keyword">in</span> v_in.items():</span><br><span class="line">        w_out = p.sub(<span class="string">&#x27;&#x27;</span>.join(pair), word)</span><br><span class="line">        v_out[w_out] = freq</span><br><span class="line">    <span class="keyword">return</span> v_out</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bpe_tokenizer</span>(<span class="params">corpus, num_merges</span>):</span><br><span class="line">    <span class="comment"># 1. 初始化，将语料库中的每个单词拆分成字符</span></span><br><span class="line">    vocab = &#123;<span class="string">&#x27; &#x27;</span>.join(word) + <span class="string">&quot; &lt;/w&gt;&quot;</span>: freq <span class="keyword">for</span> word, freq <span class="keyword">in</span> corpus.items()&#125;</span><br><span class="line"></span><br><span class="line">    bpe_merges = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_merges):</span><br><span class="line">        <span class="comment"># 2. 统计所有相邻字符对的频率</span></span><br><span class="line">        pairs = get_stats(vocab)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> pairs:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 3. 找到频率最高的符号对</span></span><br><span class="line">        best_pair = <span class="built_in">max</span>(pairs, key=pairs.get)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 4. 合并该符号对，并更新词汇表</span></span><br><span class="line">        vocab = merge_vocab(best_pair, vocab)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 5. 保存合并规则</span></span><br><span class="line">        bpe_merges.append(best_pair)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;合并 <span class="subst">&#123;i+<span class="number">1</span>&#125;</span>: <span class="subst">&#123;best_pair&#125;</span> -&gt; <span class="subst">&#123;<span class="string">&#x27;&#x27;</span>.join(best_pair)&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 最终词汇表</span></span><br><span class="line">    bpe_vocab = Counter()</span><br><span class="line">    <span class="keyword">for</span> word, freq <span class="keyword">in</span> vocab.items():</span><br><span class="line">        subwords = word.split(<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> subword <span class="keyword">in</span> subwords:</span><br><span class="line">            bpe_vocab[subword] += freq</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> bpe_merges, bpe_vocab</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bpe_encode</span>(<span class="params">text, bpe_merges</span>):</span><br><span class="line">    <span class="comment"># 1. 将文本拆分成字符</span></span><br><span class="line">    tokens = <span class="built_in">list</span>(text)</span><br><span class="line">    <span class="comment"># tokens = text.split()</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 2. 按照合并规则逐一合并</span></span><br><span class="line">    <span class="keyword">for</span> pair <span class="keyword">in</span> bpe_merges:</span><br><span class="line">        i = <span class="number">0</span></span><br><span class="line">        <span class="keyword">while</span> i &lt; <span class="built_in">len</span>(tokens) - <span class="number">1</span>:</span><br><span class="line">            <span class="keyword">if</span> tokens[i] == pair[<span class="number">0</span>] <span class="keyword">and</span> tokens[i+<span class="number">1</span>] == pair[<span class="number">1</span>]:</span><br><span class="line">                tokens[i] = <span class="string">&#x27;&#x27;</span>.join(pair)</span><br><span class="line">                tokens.pop(i+<span class="number">1</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                i += <span class="number">1</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> tokens</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="comment"># 简单的训练语料例子</span></span><br><span class="line">    corpus = &#123;</span><br><span class="line">        <span class="string">&#x27;low&#x27;</span>: <span class="number">5</span>,</span><br><span class="line">        <span class="string">&#x27;lower&#x27;</span>: <span class="number">2</span>,</span><br><span class="line">        <span class="string">&#x27;newest&#x27;</span>: <span class="number">6</span>,</span><br><span class="line">        <span class="string">&#x27;widest&#x27;</span>: <span class="number">3</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 训练BPE模型，进行10次合并</span></span><br><span class="line">    num_merges = <span class="number">10</span></span><br><span class="line">    merges, vocab = bpe_tokenizer(corpus, num_merges)</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n--- 训练结果 ---&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;合并规则:&quot;</span>, merges)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;词汇表:&quot;</span>, <span class="built_in">list</span>(vocab.keys()))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 编码新文本</span></span><br><span class="line">    test_text = <span class="string">&quot;newest lower&quot;</span></span><br><span class="line">    initial_vocab = <span class="built_in">set</span>(<span class="string">&#x27; &#x27;</span>.join(corpus.keys()).split(<span class="string">&#x27; &#x27;</span>))</span><br><span class="line">    <span class="built_in">print</span>(initial_vocab)</span><br><span class="line">    encoded_tokens = bpe_encode(test_text, merges)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n--- 新编码 ---&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;原始文本: <span class="subst">&#123;test_text&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;编码结果: <span class="subst">&#123;encoded_tokens&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- output:</span></span><br><span class="line">合并 <span class="number">1</span>: (<span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;s&#x27;</span>) -&gt; es</span><br><span class="line">合并 <span class="number">2</span>: (<span class="string">&#x27;es&#x27;</span>, <span class="string">&#x27;t&#x27;</span>) -&gt; est</span><br><span class="line">合并 <span class="number">3</span>: (<span class="string">&#x27;est&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>) -&gt; est&lt;/w&gt;</span><br><span class="line">合并 <span class="number">4</span>: (<span class="string">&#x27;l&#x27;</span>, <span class="string">&#x27;o&#x27;</span>) -&gt; lo</span><br><span class="line">合并 <span class="number">5</span>: (<span class="string">&#x27;lo&#x27;</span>, <span class="string">&#x27;w&#x27;</span>) -&gt; low</span><br><span class="line">合并 <span class="number">6</span>: (<span class="string">&#x27;n&#x27;</span>, <span class="string">&#x27;e&#x27;</span>) -&gt; ne</span><br><span class="line">合并 <span class="number">7</span>: (<span class="string">&#x27;ne&#x27;</span>, <span class="string">&#x27;w&#x27;</span>) -&gt; new</span><br><span class="line">合并 <span class="number">8</span>: (<span class="string">&#x27;new&#x27;</span>, <span class="string">&#x27;est&lt;/w&gt;&#x27;</span>) -&gt; newest&lt;/w&gt;</span><br><span class="line">合并 <span class="number">9</span>: (<span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>) -&gt; low&lt;/w&gt;</span><br><span class="line">合并 <span class="number">10</span>: (<span class="string">&#x27;w&#x27;</span>, <span class="string">&#x27;i&#x27;</span>) -&gt; wi</span><br><span class="line"></span><br><span class="line">--- 训练结果 ---</span><br><span class="line">合并规则: [(<span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;s&#x27;</span>), (<span class="string">&#x27;es&#x27;</span>, <span class="string">&#x27;t&#x27;</span>), (<span class="string">&#x27;est&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>), (<span class="string">&#x27;l&#x27;</span>, <span class="string">&#x27;o&#x27;</span>), (<span class="string">&#x27;lo&#x27;</span>, <span class="string">&#x27;w&#x27;</span>), (<span class="string">&#x27;n&#x27;</span>, <span class="string">&#x27;e&#x27;</span>), (<span class="string">&#x27;ne&#x27;</span>, <span class="string">&#x27;w&#x27;</span>), (<span class="string">&#x27;new&#x27;</span>, <span class="string">&#x27;est&lt;/w&gt;&#x27;</span>), (<span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>), (<span class="string">&#x27;w&#x27;</span>, <span class="string">&#x27;i&#x27;</span>)]</span><br><span class="line">词汇表: [<span class="string">&#x27;low&lt;/w&gt;&#x27;</span>, <span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;r&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>, <span class="string">&#x27;newest&lt;/w&gt;&#x27;</span>, <span class="string">&#x27;wi&#x27;</span>, <span class="string">&#x27;d&#x27;</span>, <span class="string">&#x27;est&lt;/w&gt;&#x27;</span>]</span><br><span class="line">&#123;<span class="string">&#x27;newest&#x27;</span>, <span class="string">&#x27;lower&#x27;</span>, <span class="string">&#x27;widest&#x27;</span>, <span class="string">&#x27;low&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line">--- 新编码 ---</span><br><span class="line">原始文本: newest lower</span><br><span class="line">编码结果: [<span class="string">&#x27;new&#x27;</span>, <span class="string">&#x27;est&#x27;</span>, <span class="string">&#x27; &#x27;</span>, <span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;r&#x27;</span>]</span><br></pre></td></tr></table></figure>
-<h3 id="Byte-level-BPE">Byte-level BPE</h3>
-<p>BPE 仍然可能有 OOV 的问题，一个巧妙的转换是将文本表示为 byte 来处理。这样就完全解决了 OOV 的问题</p>
-<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">- </span>对于字母语言，比如英语、法语，他们的字符数量都是非常少的，数量多的是字符构成的单词</span><br><span class="line"><span class="bullet">- </span>对于非字母语言，比如中文、日文、韩文，他们的字符数就已经非常多了。比如中文常用汉字三四千个左右，但是如果把不常用的也放进去就有几万之多。所以如果训练多语言模型，直接使用 unicode 编码，将每个 unicode 字符当做最小单元，那么这些最小单元的数据就已经极其多了</span><br></pre></td></tr></table></figure>
-<p><strong>Byte-level BPE</strong>：基于上面的问题，就提出了另一种方案，按照 ascii 码进行拆分，这样最小单元总共就只有256个，拆分之后再使用 BPE</p>
-<blockquote>
-<p>gpt2就是采用的这种方法<br>
-当然这样拆分之后会有很多看起来是乱码的字符存在，比如使用gpt2-xl的 tokenizer 对 <code>你好中国</code> 按照 ascii 码进行拆分的代码和结果如下所示（<code>你好中国</code>这四个汉字，每个字使用 unicode 编码之后占用3个字节，所以按照 ascii 拆分后总共12个字符）</p>
-</blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer</span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(<span class="string">&quot;gpt2-xl&quot;</span>)</span><br><span class="line">pre_tokenizer = tokenizer.backend_tokenizer.pre_tokenizer</span><br><span class="line"></span><br><span class="line">s = <span class="string">&quot;你好中国&quot;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">list</span>(pre_tokenizer.pre_tokenize_str(s)[<span class="number">0</span>][<span class="number">0</span>]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出结果：[&#x27;ä&#x27;, &#x27;½&#x27;, &#x27;ł&#x27;, &#x27;å&#x27;, &#x27;¥&#x27;, &#x27;½&#x27;, &#x27;ä&#x27;, &#x27;¸&#x27;, &#x27;Ń&#x27;, &#x27;å&#x27;, &#x27;Ľ&#x27;, &#x27;½&#x27;]</span></span><br></pre></td></tr></table></figure>
-<h2 id="B-Wordpiece">B. Wordpiece</h2>
-<p>Wordpiece 可以看作是 BPE 的一个变体。整体流程一样，但是在选择新词的方法不同。<br>
-BPE 每次是选择词频最高的两个词的组合。而 Wordpiece 则是选择两个点互信息(PMI)最大的词</p>
-<p>$$<br>
-PMI: L(z) = L(x,y) = log{\frac{p(x,y)}{p(x)p(y)}} = log{\frac{p(z)}{p(x)p(y)}}<br>
-$$</p>
-<blockquote>
-<p>点互信息(PMI)表示两个子词之间的凝聚程度的高低</p>
-</blockquote>
-<p>$$<br>
-BPE_{next} = argmax(pair_freq)<br>
-$$<br>
-$$<br>
-WordPiece_{next} = argmax(\frac{pair_freq}{first_token__freq * second_token_freq})<br>
-$$</p>
-<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">通过公式可以看出，Wordpiece 会选择一起出现次数更多，且各自出现次数更少的组合。而 <span class="keyword">BPE </span>仅仅考虑一起出现次数最多的。</span><br><span class="line">比如 AB 出现了 <span class="number">8</span>次，A 出现了 <span class="number">10</span>次，<span class="keyword">B </span>出现了 <span class="number">10</span>次。CD 出现了<span class="number">5</span>次，C出现了<span class="number">5</span>次，D出现了<span class="number">5</span>次。</span><br><span class="line"><span class="keyword">BPE </span>优先选择 AB， 而 Wordpiece 则优先选择 CD.</span><br></pre></td></tr></table></figure>
-<h2 id="C-Unigram-language-modeling-UniLM">C. Unigram language modeling (UniLM)</h2>
-<p><strong>BPE/WordPiece</strong>: 字粒度 -&gt; 合并token -&gt; 删除被覆盖token<br>
-<strong>UniLM</strong>: 初始化一个大词表 -&gt; 慢慢删除token（字粒度的词汇不删除）</p>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">目标: 是删除词后的词表，使得语料的自然语言模型的似然值最大  </span></span><br><span class="line"></span><br><span class="line">计算的过程中，使用维特比算法来选择最优的分割和删除的词</span><br></pre></td></tr></table></figure>
-<h2 id="D-Sentencepiece">D. Sentencepiece</h2>
-<p>Sentencepiece 主要解决多语言的问题，将输入完全认为是 unicode 编码，不需要依赖空格和jieba等进行分词这一步</p>
-<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">之前英文是通过空格来分词，中文用jieba分词来构建初始的词汇，然后加上&lt;/w&gt;，##等标记  </span><br></pre></td></tr></table></figure>
-<hr>
-<p>一些语言模型使用的 Tokenization 方法</p>
-<table>
-<thead>
-<tr>
-<th>模型</th>
-<th>Tokenization</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Llama</td>
-<td>sentencepiece BPE</td>
-</tr>
-<tr>
-<td>Ddeepseek</td>
-<td>Byte-level BPE</td>
-</tr>
-<tr>
-<td>Qwen</td>
-<td>Byte-level BPE</td>
-</tr>
-<tr>
-<td>Yi</td>
-<td>sentencepiece BPE</td>
-</tr>
-</tbody>
-</table>
-<hr>
-<h3 id="扩展问题：">扩展问题：</h3>
-<ol>
-<li>对于中文等没有明确词边界的语言，Tokenization有什么特殊的挑战？常用的中文分词方法有哪些？</li>
-<li>Tokenization如何影响模型的词汇表大小？词汇表大小对模型性能有什么影响？</li>
-<li>多语言模型的Tokenization有什么特殊之处？如何处理不同语言之间的Tokenization差异？</li>
-</ol>
-<h3 id="参考">参考</h3>
-<p>[0] <a target="_blank" rel="noopener" href="https://mingchao.wang/ZfZEmye9/">几种 tokenize 策略</a></p>
 
     </div>
 
@@ -563,14 +385,14 @@ $$</p>
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">14k</span>
+    <span title="站点总字数">5k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">25 分钟</span>
+    <span title="站点阅读时长">8 分钟</span>
   </span>
 </div>
 

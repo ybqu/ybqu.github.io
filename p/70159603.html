@@ -311,43 +311,42 @@
     
     
     <div class="post-body" itemprop="articleBody"><hr>
-<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似
-<code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
+<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似 <code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
 <blockquote>
-<p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候，
-完全是基于字节来统计的，所以其可以对任意的数据进行
-encode，不只是局限于文本数据 <span id="more"></span></p>
+<p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候， 完全是基于字节来统计的，所以其可以对任意的数据进行 encode，不只是局限于文本数据</p>
 </blockquote>
-<p>例如：<br>
-<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">stay foolish stay hungry</span></span><br></pre></td></tr></table></figure> - 如果是 word 粒度的 tokenize 方法，那处理的对象是 word，
-那第一步可能先把 stay 给变成 token，因为 stay 出现了2次 - 如果是 char
-粒度的， 那处理的力度就是字母，那会先把 st, ta, y_, oo 先变成 token</p>
+<span id="more"></span>
+<p>例如：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">stay foolish stay hungry</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>如果是 word 粒度的 tokenize 方法，那处理的对象是 word， 那第一步可能先把 stay 给变成 token，因为 stay 出现了2次</li>
+<li>如果是 char 粒度的， 那处理的力度就是字母，那会先把 st, ta, y_, oo 先变成 token</li>
+</ul>
 <figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">非Byte level的tokenizer是基于现有文本元素来进行组合。比如英文就是<span class="number">26</span>个大小写字母还有其他标点等符号，中文则是汉字</span><br><span class="line"></span><br><span class="line">这样做总是会存在一个OOV的问题，比如现在有个单词，clever，那就没法表示了，只能用一个统一的<span class="built_in">token</span>来表示</span><br><span class="line"></span><br><span class="line">那自然英文的tokenizer就没法给中文做tokenzier</span><br></pre></td></tr></table></figure>
 <p>Byte-level处理的对象是字节。不管是什么语言，最终在计算机里都是二进制的数据。<br>
-比如单词 stay 在计算机里表示如下： <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">s</span>: <span class="number">01110011</span> (<span class="number">0</span>x73)</span><br><span class="line"><span class="attribute">t</span>: <span class="number">01110100</span> (<span class="number">0</span>x74)</span><br><span class="line"><span class="attribute">a</span>: <span class="number">01100001</span> (<span class="number">0</span>x61)</span><br><span class="line"><span class="attribute">y</span>: <span class="number">01111001</span> (<span class="number">0</span>x79)</span><br></pre></td></tr></table></figure> 在训练 tokenize
-模型的时候，直接统计字节的pair。比如(0x73,0x74)出现次数最多，则优先变成token。</p>
+比如单词 stay 在计算机里表示如下：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">s</span>: <span class="number">01110011</span> (<span class="number">0</span>x73)</span><br><span class="line"><span class="attribute">t</span>: <span class="number">01110100</span> (<span class="number">0</span>x74)</span><br><span class="line"><span class="attribute">a</span>: <span class="number">01100001</span> (<span class="number">0</span>x61)</span><br><span class="line"><span class="attribute">y</span>: <span class="number">01111001</span> (<span class="number">0</span>x79)</span><br></pre></td></tr></table></figure>
+<p>在训练 tokenize 模型的时候，直接统计字节的pair。比如(0x73,0x74)出现次数最多，则优先变成token。</p>
 <blockquote>
-<p>由于所有的数据都是由字节组成的，而初始的 token 只需要 256 个，
-就覆盖了所有的可能，所以完全没有OOV的问题。</p>
+<p>由于所有的数据都是由字节组成的，而初始的 token 只需要 256 个， 就覆盖了所有的可能，所以完全没有OOV的问题。</p>
 </blockquote>
-<p>对于汉字是由 Unicode 的组成的，比如“看图学”这三个字，用 Unicode
-的十六进制表示为 <figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">看：<span class="number">0x770B</span></span><br><span class="line">图：<span class="number">0x56FE</span></span><br><span class="line">学：<span class="number">0x5B66</span></span><br></pre></td></tr></table></figure> &gt; Byte
-level的不管原始的信息是什么，就是直接用字节组合。所以这个时候，英文的
-tokenizer 也可以给汉字编码，因为汉字也可以表示成字节</p>
-<p>比如 llama 2 的词表里大概有5k
-多个汉字，其他不在词表里的汉字，可能需要多个 token
-来表示一个汉字，这就造成了吞吐效率的极大浪费，所以需要加入新的词表对
-llama 进行 post pretrain 才行。<br>
-比如你问 llama2
-问题，对于输入的中文还是可以理解的，但是输出的时候还是倾向于用英文来输出：
-<img src="/p/70159603/llama2chat.png"></p>
+<p>对于汉字是由 Unicode 的组成的，比如“看图学”这三个字，用 Unicode 的十六进制表示为</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">看：<span class="number">0x770B</span></span><br><span class="line">图：<span class="number">0x56FE</span></span><br><span class="line">学：<span class="number">0x5B66</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Byte level的不管原始的信息是什么，就是直接用字节组合。所以这个时候，英文的 tokenizer 也可以给汉字编码，因为汉字也可以表示成字节</p>
+</blockquote>
+<p>比如 llama 2 的词表里大概有5k 多个汉字，其他不在词表里的汉字，可能需要多个 token 来表示一个汉字，这就造成了吞吐效率的极大浪费，所以需要加入新的词表对 llama 进行 post pretrain 才行。<br>
+比如你问 llama2 问题，对于输入的中文还是可以理解的，但是输出的时候还是倾向于用英文来输出：<br>
+<img src="/p/70159603/llama2chat.png" alt></p>
 <hr>
-<p>扩展问题： 1. 常用的 tokenize 方法都有哪些？（本合集里有答案） 2.
-这些方法各自有什么优缺点？ 3. 什么情况下，比较适合扩充 tokenizer
-的词表？</p>
+<p>扩展问题：</p>
+<ol>
+<li>常用的 tokenize 方法都有哪些？（本合集里有答案）</li>
+<li>这些方法各自有什么优缺点？</li>
+<li>什么情况下，比较适合扩充 tokenizer 的词表？</li>
+</ol>
 <p>进一步阅读：<br>
-[0] <a target="_blank" rel="noopener" href="https://github.com/ymcui/Chinese-LLaMA-Alpaca">Chinese-LLaMA-Alpaca
-/ 词表扩充，哈工大崔一鸣</a></p>
+[0] <a target="_blank" rel="noopener" href="https://github.com/ymcui/Chinese-LLaMA-Alpaca">Chinese-LLaMA-Alpaca / 词表扩充，哈工大崔一鸣</a></p>
 
     </div>
 
@@ -420,14 +419,14 @@ llama 进行 post pretrain 才行。<br>
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">14k</span>
+    <span title="站点总字数">5k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">25 分钟</span>
+    <span title="站点阅读时长">8 分钟</span>
   </span>
 </div>
 
