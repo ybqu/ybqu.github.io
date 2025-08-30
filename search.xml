@@ -6,89 +6,76 @@
     <content><![CDATA[<hr>
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line"><span class="bullet">1.</span> 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好</span><br><span class="line"><span class="bullet">2.</span> 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果</span><br><span class="line"><span class="bullet">3.</span> 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
-<h2 id="为什么词表越大越好">为什么词表越大越好</h2>
+<h2 id="为什么词表越大越好"><a class="markdownIt-Anchor" href="#为什么词表越大越好"></a> 为什么词表越大越好</h2>
 <p>目前已经有很多研究表明，词表越大模型效果会更好<br>
-<a href="https://arxiv.org/pdf/2406.16508">《Large Vocabulary Size
-Improves Large Language Models》</a>中详细对比了词表大小分别为：5k, 10k,
-50k, 100k, 500k的效果。</p>
-<p><img src="/p/5b4d8163.htm/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare.png"></p>
+<a href="https://arxiv.org/pdf/2406.16508">《Large Vocabulary Size Improves Large Language Models》</a>中详细对比了词表大小分别为：5k, 10k, 50k, 100k, 500k的效果。</p>
+<p><img src="/p/5b4d8163/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare.png" alt></p>
 <blockquote>
 <p>从头训练的 GPT-3 Large 模型(760M)</p>
 </blockquote>
-<p><img src="/p/5b4d8163.htm/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare_GPT3.png"></p>
+<p><img src="/p/5b4d8163/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare_GPT3.png" alt></p>
 <blockquote>
 <p>基于 llama 模型，扩大词表继续训练</p>
 </blockquote>
-<h3 id="为什么词表变大会更好">为什么词表变大会更好？</h3>
-<ol type="1">
+<h3 id="为什么词表变大会更好"><a class="markdownIt-Anchor" href="#为什么词表变大会更好"></a> 为什么词表变大会更好？</h3>
+<ol>
 <li>计算效率的提升<br>
-相同的文本，转换为token后越短越好。通常用压缩率来衡量文本转换为token后的压缩比例。
-<strong>更高的压缩率代表了相同数量的token能够表达更多的信息，相同的信息
-token 越短则训练效率更高。</strong> <span class="math display">$$CompressionRate(V) = \frac{N\_Tokens}{N\_Words}
-$$</span> Baichuan 在技术报告里给出的一些模型的压缩率如下
-<div data-align="center">
-<p><img src="/p/5b4d8163.htm/vocab_compression_rate_baichuan2.png" style="width: 70%;"></p>
-</div>
-然后千问在技术报告里也提到自家模型的压缩率比其他家更好</li>
+相同的文本，转换为token后越短越好。通常用压缩率来衡量文本转换为token后的压缩比例。<br>
+<strong>更高的压缩率代表了相同数量的token能够表达更多的信息，相同的信息 token 越短则训练效率更高。</strong></li>
 </ol>
-<p><img src="/p/5b4d8163.htm/vocab_compression_rate_qwen.png"></p>
-<ol type="1">
-<li><p>有助于理解文本<br>
-更多的词汇能够减少 OOV (Out of Vocabulary)的影响,
-训练的信息不会丢失，推理的时候泛化能力也更强。
-同时更多的词汇可以减少词汇分解后的歧义，从而更好地理解和生成文本。</p></li>
-<li><p>更长的上下文<br>
-预训练阶段往往都有最大序列长度的限制，压缩率更高代表着能看到更多的上下文，就能
-attention 到更多的信息。<a href="https://arxiv.org/pdf/2204.08832">《Impact of Tokenization on
-Language Models: An Analysis for Turkish》</a></p></li>
-</ol>
-<h2 id="计算效率的考虑">计算效率的考虑</h2>
-<p>虽然 vocabulary 越大越好，但是也不能无限扩大。因为 vocabulary
-变大后，Embedding 层变大，最后输出的 Head layer 也会变大 <figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">比如 <span class="keyword">Llama3 </span>将 vocabulary 从 <span class="keyword">llama2 </span>的 <span class="number">32000</span> 扩展到 <span class="number">128256</span>，参数量就变大了。<span class="keyword">llama2 </span>还不到<span class="number">7</span>B，但是 <span class="keyword">Llama3 </span>有 <span class="number">8</span>B了（当然这里面还有其他参数的改动）</span><br></pre></td></tr></table></figure>
-<strong>参数更大，更占内存，而且输出的时候 softmax
-也更大，计算就更慢。</strong><br>
-目前业界普遍设置在 10万 到 20万左右。比如 Qwen 的 词表大小为
-152064，baichuan2为125696，llama3 为128256，deepseek 为 102400。
-<figure class="highlight stan"><table><tr><td class="code"><pre><span class="line">针对 <span class="built_in">softmax</span> 过大的问题目前也有解法，可以用 Adaptive <span class="built_in">softmax</span>，参考论文《Efficient <span class="built_in">softmax</span> approximation <span class="keyword">for</span> GPUs》(https:<span class="comment">//arxiv.org/pdf/1609.04309)</span></span><br></pre></td></tr></table></figure></p>
-<h2 id="内存对齐">内存对齐</h2>
-<p>很多时候模型上的一些设置其实跟硬件息息相关。例如： <figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">Qwen</span> 的readme 和 训练代码中 vocabulary 的数量不一样， readme 中为 <span class="number">151643</span>，但是实际上代码里写的是 <span class="number">152064</span></span><br></pre></td></tr></table></figure>
-因为最终Embedding 矩阵和输出时候的 Head Layer 最终都会转换成矩阵放到 GPU
-的 Tensor Core 中计算。而根据英伟达的开发手册，矩阵运算最好根据 GPU
-和计算类型满足如下的条件：</p>
-<p><img src="/p/5b4d8163.htm/Tensor_Core_Nvidia.png"></p>
-Karpathy 也曾经证实了这一点，他当时写了个
-nanoGPT，提升最大的点就是把词表从 50257 改成了
-50304，后一个是64的倍数。然后带来了25%的速度上的提升。
-<div data-align="center">
-<pre><code>&lt;img src=&quot;./Transformers-LLM-的词表应该选多大/karpathy_nanoGPT_twitter.png&quot; style=&quot;width: 70%;&quot;&gt;&lt;/img&gt;</code></pre>
+<p class="katex-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>C</mi><mi>o</mi><mi>m</mi><mi>p</mi><mi>r</mi><mi>e</mi><mi>s</mi><mi>s</mi><mi>i</mi><mi>o</mi><mi>n</mi><mi>R</mi><mi>a</mi><mi>t</mi><mi>e</mi><mo stretchy="false">(</mo><mi>V</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>N</mi><mi mathvariant="normal">_</mi><mi>T</mi><mi>o</mi><mi>k</mi><mi>e</mi><mi>n</mi><mi>s</mi></mrow><mrow><mi>N</mi><mi mathvariant="normal">_</mi><mi>W</mi><mi>o</mi><mi>r</mi><mi>d</mi><mi>s</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">CompressionRate(V) = \frac{N\_Tokens}{N\_Words} 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mord mathnormal">o</span><span class="mord mathnormal">m</span><span class="mord mathnormal">p</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mord mathnormal">e</span><span class="mord mathnormal">s</span><span class="mord mathnormal">s</span><span class="mord mathnormal">i</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mord mathnormal">a</span><span class="mord mathnormal">t</span><span class="mord mathnormal">e</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.39044em;vertical-align:-0.996em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.39444em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mord mathnormal">d</span><span class="mord mathnormal">s</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.6999999999999997em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mord mathnormal">e</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.996em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>Baichuan 在技术报告里给出的一些模型的压缩率如下</p>
+<div align="center">
+    <img src="/p/5b4d8163/vocab_compression_rate_baichuan2.png" style="width: 70%;">
 </div>
-<p>所以目前大多数训练都在 A100
-上训练，基本上都是64的倍数。如果某个模型的词表不是
-64的倍数，那可能不知不觉浪费了很多计算资源。</p>
+然后千问在技术报告里也提到自家模型的压缩率比其他家更好
+<p><img src="/p/5b4d8163/vocab_compression_rate_qwen.png" alt></p>
+<ol>
+<li>
+<p>有助于理解文本<br>
+更多的词汇能够减少 OOV (Out of Vocabulary)的影响, 训练的信息不会丢失，推理的时候泛化能力也更强。<br>
+同时更多的词汇可以减少词汇分解后的歧义，从而更好地理解和生成文本。</p>
+</li>
+<li>
+<p>更长的上下文<br>
+预训练阶段往往都有最大序列长度的限制，压缩率更高代表着能看到更多的上下文，就能 attention 到更多的信息。<a href="https://arxiv.org/pdf/2204.08832">《Impact of Tokenization on Language Models: An Analysis for Turkish》</a></p>
+</li>
+</ol>
+<h2 id="计算效率的考虑"><a class="markdownIt-Anchor" href="#计算效率的考虑"></a> 计算效率的考虑</h2>
+<p>虽然 vocabulary 越大越好，但是也不能无限扩大。因为 vocabulary 变大后，Embedding 层变大，最后输出的 Head layer 也会变大</p>
+<figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">比如 <span class="keyword">Llama3 </span>将 vocabulary 从 <span class="keyword">llama2 </span>的 <span class="number">32000</span> 扩展到 <span class="number">128256</span>，参数量就变大了。<span class="keyword">llama2 </span>还不到<span class="number">7</span>B，但是 <span class="keyword">Llama3 </span>有 <span class="number">8</span>B了（当然这里面还有其他参数的改动）</span><br></pre></td></tr></table></figure>
+<p><strong>参数更大，更占内存，而且输出的时候 softmax 也更大，计算就更慢。</strong><br>
+目前业界普遍设置在 10万 到 20万左右。比如 Qwen 的 词表大小为 152064，baichuan2为125696，llama3 为128256，deepseek 为 102400。</p>
+<figure class="highlight stan"><table><tr><td class="code"><pre><span class="line">针对 <span class="built_in">softmax</span> 过大的问题目前也有解法，可以用 Adaptive <span class="built_in">softmax</span>，参考论文《Efficient <span class="built_in">softmax</span> approximation <span class="keyword">for</span> GPUs》(https:<span class="comment">//arxiv.org/pdf/1609.04309)</span></span><br></pre></td></tr></table></figure>
+<h2 id="内存对齐"><a class="markdownIt-Anchor" href="#内存对齐"></a> 内存对齐</h2>
+<p>很多时候模型上的一些设置其实跟硬件息息相关。例如：</p>
+<figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">Qwen</span> 的readme 和 训练代码中 vocabulary 的数量不一样， readme 中为 <span class="number">151643</span>，但是实际上代码里写的是 <span class="number">152064</span></span><br></pre></td></tr></table></figure>
+<p>因为最终Embedding 矩阵和输出时候的 Head Layer 最终都会转换成矩阵放到 GPU 的 Tensor Core 中计算。而根据英伟达的开发手册，矩阵运算最好根据 GPU 和计算类型满足如下的条件：</p>
+<p><img src="/p/5b4d8163/Tensor_Core_Nvidia.png" alt></p>
+<p>Karpathy 也曾经证实了这一点，他当时写了个 nanoGPT，提升最大的点就是把词表从 50257 改成了 50304，后一个是64的倍数。然后带来了25%的速度上的提升。</p>
+<div align="center">
+    <img src="/p/5b4d8163/karpathy_nanoGPT_twitter.png" style="width: 70%;">
+</div>
+<p>所以目前大多数训练都在 A100 上训练，基本上都是64的倍数。如果某个模型的词表不是 64的倍数，那可能不知不觉浪费了很多计算资源。</p>
 <hr>
-<h3 id="扩展问题">扩展问题：</h3>
-<ol type="1">
+<h3 id="扩展问题"><a class="markdownIt-Anchor" href="#扩展问题"></a> 扩展问题：</h3>
+<ol>
 <li>目前常用的 Tokenization 都有哪些？</li>
-<li>能否介绍一下BPE（Byte Pair
-Encoding）、WordPiece、SentencePiece等分词算法，它们如何影响词表大小的选择？</li>
+<li>能否介绍一下BPE（Byte Pair Encoding）、WordPiece、SentencePiece等分词算法，它们如何影响词表大小的选择？</li>
 <li>如何平衡词表大小和模型的计算效率？</li>
 <li>词表过大，softmax 计算太慢怎么办？</li>
 <li>两个词表size： 128000 和 123321 哪个更好？</li>
 </ol>
-<h3 id="reference-进一步阅读">Reference &amp;&amp; 进一步阅读：</h3>
+<h3 id="reference-进一步阅读"><a class="markdownIt-Anchor" href="#reference-进一步阅读"></a> Reference &amp;&amp; 进一步阅读：</h3>
 <p>[0] <a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">矩阵相乘的最佳大小</a><br>
-[1] <a href="https://arxiv.org/pdf/2406.16508">Large Vocabulary Size
-Improves Large Language Models</a><br>
-[2] <a href="https://arxiv.org/abs/2204.08832">Impact of Tokenization on
-Language Models: An Analysis for Turkish</a><br>
-[3] <a href="https://arxiv.org/abs/1609.04309">Efficient softmax
-approximation for GPUs</a><br>
-[4] <a href="https://github.com/QwenLM/Qwen/issues/419">qwen
-词表大小的一些疑问</a><br>
-[5] <a href="https://arxiv.org/pdf/2309.10305">Baichuan 2: Open
-Large-scale Language Models</a><br>
-[6] <a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">Matrix
-Multiplication Background User’s Guide</a></p>
+[1] <a href="https://arxiv.org/pdf/2406.16508">Large Vocabulary Size Improves Large Language Models</a><br>
+[2] <a href="https://arxiv.org/abs/2204.08832">Impact of Tokenization on Language Models: An Analysis for Turkish</a><br>
+[3] <a href="https://arxiv.org/abs/1609.04309">Efficient softmax approximation for GPUs</a><br>
+[4] <a href="https://github.com/QwenLM/Qwen/issues/419">qwen 词表大小的一些疑问</a><br>
+[5] <a href="https://arxiv.org/pdf/2309.10305">Baichuan 2: Open Large-scale Language Models<br>
+</a><br>
+[6] <a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">Matrix Multiplication Background User’s Guide</a></p>
 ]]></content>
       <categories>
         <category>Transformers</category>
