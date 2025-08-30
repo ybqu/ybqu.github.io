@@ -3,43 +3,42 @@
   <entry>
     <title>给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么</title>
     <url>/p/70159603.html</url>
-    <content><![CDATA[<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似
-<code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
+    <content><![CDATA[<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似 <code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
 <blockquote>
-<p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候，
-完全是基于字节来统计的，所以其可以对任意的数据进行
-encode，不只是局限于文本数据 <span id="more"></span></p>
+<p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候， 完全是基于字节来统计的，所以其可以对任意的数据进行 encode，不只是局限于文本数据</p>
 </blockquote>
-<p>例如：<br>
-<figure class="highlight ebnf"><table><tr><td class="code"><pre><span class="line"><span class="attribute">stay foolish stay hungry</span></span><br></pre></td></tr></table></figure> - 如果是 word 粒度的 tokenize 方法，那处理的对象是 word，
-那第一步可能先把 stay 给变成 token，因为 stay 出现了2次 - 如果是 char
-粒度的， 那处理的力度就是字母，那会先把 st, ta, y_, oo 先变成 token</p>
+<span id="more"></span>
+<p>例如：</p>
+<figure class="highlight ebnf"><table><tr><td class="code"><pre><span class="line"><span class="attribute">stay foolish stay hungry</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>如果是 word 粒度的 tokenize 方法，那处理的对象是 word， 那第一步可能先把 stay 给变成 token，因为 stay 出现了2次</li>
+<li>如果是 char 粒度的， 那处理的力度就是字母，那会先把 st, ta, y_, oo 先变成 token</li>
+</ul>
 <figure class="highlight gauss"><table><tr><td class="code"><pre><span class="line">非Byte level的tokenizer是基于现有文本元素来进行组合。比如英文就是<span class="number">26</span>个大小写字母还有其他标点等符号，中文则是汉字</span><br><span class="line"></span><br><span class="line">这样做总是会存在一个OOV的问题，比如现在有个单词，clever，那就没法表示了，只能用一个统一的<span class="built_in">token</span>来表示</span><br><span class="line"></span><br><span class="line">那自然英文的tokenizer就没法给中文做tokenzier</span><br></pre></td></tr></table></figure>
 <p>Byte-level处理的对象是字节。不管是什么语言，最终在计算机里都是二进制的数据。<br>
-比如单词 stay 在计算机里表示如下： <figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">s</span>: <span class="number">01110011</span> (<span class="number">0</span>x73)</span><br><span class="line"><span class="attribute">t</span>: <span class="number">01110100</span> (<span class="number">0</span>x74)</span><br><span class="line"><span class="attribute">a</span>: <span class="number">01100001</span> (<span class="number">0</span>x61)</span><br><span class="line"><span class="attribute">y</span>: <span class="number">01111001</span> (<span class="number">0</span>x79)</span><br></pre></td></tr></table></figure> 在训练 tokenize
-模型的时候，直接统计字节的pair。比如(0x73,0x74)出现次数最多，则优先变成token。</p>
+比如单词 stay 在计算机里表示如下：</p>
+<figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">s</span>: <span class="number">01110011</span> (<span class="number">0</span>x73)</span><br><span class="line"><span class="attribute">t</span>: <span class="number">01110100</span> (<span class="number">0</span>x74)</span><br><span class="line"><span class="attribute">a</span>: <span class="number">01100001</span> (<span class="number">0</span>x61)</span><br><span class="line"><span class="attribute">y</span>: <span class="number">01111001</span> (<span class="number">0</span>x79)</span><br></pre></td></tr></table></figure>
+<p>在训练 tokenize 模型的时候，直接统计字节的pair。比如(0x73,0x74)出现次数最多，则优先变成token。</p>
 <blockquote>
-<p>由于所有的数据都是由字节组成的，而初始的 token 只需要 256 个，
-就覆盖了所有的可能，所以完全没有OOV的问题。</p>
+<p>由于所有的数据都是由字节组成的，而初始的 token 只需要 256 个， 就覆盖了所有的可能，所以完全没有OOV的问题。</p>
 </blockquote>
-<p>对于汉字是由 Unicode 的组成的，比如“看图学”这三个字，用 Unicode
-的十六进制表示为 <figure class="highlight x86asm"><table><tr><td class="code"><pre><span class="line">看：<span class="number">0x770B</span></span><br><span class="line">图：<span class="number">0x56FE</span></span><br><span class="line">学：<span class="number">0x5B66</span></span><br></pre></td></tr></table></figure> &gt; Byte
-level的不管原始的信息是什么，就是直接用字节组合。所以这个时候，英文的
-tokenizer 也可以给汉字编码，因为汉字也可以表示成字节</p>
-<p>比如 llama 2 的词表里大概有5k
-多个汉字，其他不在词表里的汉字，可能需要多个 token
-来表示一个汉字，这就造成了吞吐效率的极大浪费，所以需要加入新的词表对
-llama 进行 post pretrain 才行。<br>
-比如你问 llama2
-问题，对于输入的中文还是可以理解的，但是输出的时候还是倾向于用英文来输出：
-<img src="/p/70159603/llama2chat.png"></p>
+<p>对于汉字是由 Unicode 的组成的，比如“看图学”这三个字，用 Unicode 的十六进制表示为</p>
+<figure class="highlight x86asm"><table><tr><td class="code"><pre><span class="line">看：<span class="number">0x770B</span></span><br><span class="line">图：<span class="number">0x56FE</span></span><br><span class="line">学：<span class="number">0x5B66</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Byte level的不管原始的信息是什么，就是直接用字节组合。所以这个时候，英文的 tokenizer 也可以给汉字编码，因为汉字也可以表示成字节</p>
+</blockquote>
+<p>比如 llama 2 的词表里大概有5k 多个汉字，其他不在词表里的汉字，可能需要多个 token 来表示一个汉字，这就造成了吞吐效率的极大浪费，所以需要加入新的词表对 llama 进行 post pretrain 才行。<br>
+比如你问 llama2 问题，对于输入的中文还是可以理解的，但是输出的时候还是倾向于用英文来输出：<br>
+<img src="/p/70159603/llama2chat.png" alt></p>
 <hr>
-<p>扩展问题： 1. 常用的 tokenize 方法都有哪些？（本合集里有答案） 2.
-这些方法各自有什么优缺点？ 3. 什么情况下，比较适合扩充 tokenizer
-的词表？</p>
+<p>扩展问题：</p>
+<ol>
+<li>常用的 tokenize 方法都有哪些？（本合集里有答案）</li>
+<li>这些方法各自有什么优缺点？</li>
+<li>什么情况下，比较适合扩充 tokenizer 的词表？</li>
+</ol>
 <p>进一步阅读：<br>
-[0] <a href="https://github.com/ymcui/Chinese-LLaMA-Alpaca">Chinese-LLaMA-Alpaca
-/ 词表扩充，哈工大崔一鸣</a></p>
+[0] <a href="https://github.com/ymcui/Chinese-LLaMA-Alpaca">Chinese-LLaMA-Alpaca / 词表扩充，哈工大崔一鸣</a></p>
 ]]></content>
       <categories>
         <category>Transformers</category>
@@ -55,51 +54,42 @@ llama 进行 post pretrain 才行。<br>
     <title>大模型一个token能代表几个单词和汉字？</title>
     <url>/p/d516c1d6.html</url>
     <content><![CDATA[<blockquote>
-<p>一段一万字的 prompt，输入到最大长度为 8192
-的模型，是否能正确的输出？</p>
+<p>一段一万字的 prompt，输入到最大长度为 8192 的模型，是否能正确的输出？</p>
 </blockquote>
-<p>每个模型的 Tokenizer
-都不太一样，所以这个问题不能给出很精确的答案，更多的是考察一些大模型的使用经验。</p>
-<p>有的模型的技术报告会提供一个“压缩率” 的指标，比如 qwen 和 baichuan
-的，但是有些技术报告并不会提。 <span id="more"></span></p>
-<p>虽然说不同的 tokenizer
-在不同的训练语料上训练的不一样，但主流的方法也基本相似。其实只要训练语料里主要的语言一样，在大量数据的堆积下，最终的的结果差异并不大。下面会给出以
-英文为主的模型和中英文为主的模型的一些结果对比。</p>
+<p>每个模型的 Tokenizer 都不太一样，所以这个问题不能给出很精确的答案，更多的是考察一些大模型的使用经验。</p>
+<p>有的模型的技术报告会提供一个“压缩率” 的指标，比如 qwen 和 baichuan 的，但是有些技术报告并不会提。</p>
+<span id="more"></span>
+<p>虽然说不同的 tokenizer 在不同的训练语料上训练的不一样，但主流的方法也基本相似。其实只要训练语料里主要的语言一样，在大量数据的堆积下，最终的的结果差异并不大。下面会给出以 英文为主的模型和中英文为主的模型的一些结果对比。</p>
 <blockquote>
-<p>《孔乙己》 和 《哈利波特》第一章，分别测试不同 tokenizer
-对这两篇小说的中文版和英文版的效果。 <img src="/p/d516c1d6/看图学_一个token代表的汉字数_单词数.png"></p>
+<p>《孔乙己》 和 《哈利波特》第一章，分别测试不同 tokenizer 对这两篇小说的中文版和英文版的效果。<br>
+<img src="/p/d516c1d6/%E7%9C%8B%E5%9B%BE%E5%AD%A6_%E4%B8%80%E4%B8%AAtoken%E4%BB%A3%E8%A1%A8%E7%9A%84%E6%B1%89%E5%AD%97%E6%95%B0_%E5%8D%95%E8%AF%8D%E6%95%B0.png" alt></p>
 </blockquote>
 <figure class="highlight asciidoc"><table><tr><td class="code"><pre><span class="line">每个模型在英文上的效果基本差不太多:</span><br><span class="line"></span><br><span class="line"><span class="section">- 一个 token 大概占 0.75～0.8 个单词</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"><span class="section">这与 OpenAI 官网上写的差不多：“A helpful rule of thumb is that one token generally corresponds to ~4 characters of text for common English text. This translates to roughly ¾ of a word (so 100 tokens ~= 75 words).”</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"><span class="bullet">- </span>国内的模型在中文语料上特训之后，中文编码的效率显著高于英文的 ChatGPT 和 Llama。一个 token 大概占1.5 个汉字</span><br></pre></td></tr></table></figure>
-<h4 id="目前的-tokenizer-的编码效率够么">目前的 Tokenizer
-的编码效率够么？</h4>
-<p>如何把语料用最少的 bit
-位传输给模型，其实也是个<strong>通信</strong>的问题。只不过现在模型参数的通信远高于数据的通信，所以数据
-与 GPU 的通信目前还不需要优化。
-如果哪一天模型需要大量的输入的时候，tokenizer
-的编码效率可能还会被研究。</p>
-<h4 id="当前的-tokenization-是否是最优编码">当前的 tokenization
-是否是最优编码？</h4>
-<p>目前只能说有最优编码的影子，但是还不完全是。 比如 BPE
-的算法其实就是在构建 Huffman
-树，但是构建了之后仍然采用了相同比特位数来编码。这么做的好处<strong>省去了解码的过程，直接查表就获取到了
-Embedding，但是其实引入解码这点计算量也算不了啥</strong>。坏处就是<strong>通信上其实还有优化的空间</strong>。</p>
-<p>还有一点就是<strong>中文的编码效率其实理论上还可以更高</strong>，因为目前所有的处理流程都是按照英文的流程来的。比如
-subword，对中文就完全没生效啊。 <figure class="highlight lasso"><table><tr><td class="code"><pre><span class="line">例如：</span><br><span class="line">oarfish 我虽然不知道是啥，但是猜测是条鱼。对于中文来说，“鲥”这个字我可能也不认识，但是我也猜测这是条鱼，但是这个字在中文肯定被表示成 <span class="built_in">bytes</span> 了，就没啥意义了</span><br></pre></td></tr></table></figure></p>
-<p>所以中文如何高效的编码，也应该是一个研究课题，我甚至感觉中文这种二维的文字，<strong>应该和图像的
-tokenizer 有某种联系</strong>，比如在训练的时候，除了 id
-embedding，还有这个字对应的图片信息的 embedding。</p>
+<h4 id="目前的-Tokenizer-的编码效率够么？">目前的 Tokenizer 的编码效率够么？</h4>
+<p>如何把语料用最少的 bit 位传输给模型，其实也是个<strong>通信</strong>的问题。只不过现在模型参数的通信远高于数据的通信，所以数据 与 GPU 的通信目前还不需要优化。<br>
+如果哪一天模型需要大量的输入的时候，tokenizer 的编码效率可能还会被研究。</p>
+<h4 id="当前的-tokenization-是否是最优编码？">当前的 tokenization 是否是最优编码？</h4>
+<p>目前只能说有最优编码的影子，但是还不完全是。<br>
+比如 BPE 的算法其实就是在构建 Huffman 树，但是构建了之后仍然采用了相同比特位数来编码。这么做的好处<strong>省去了解码的过程，直接查表就获取到了 Embedding，但是其实引入解码这点计算量也算不了啥</strong>。坏处就是<strong>通信上其实还有优化的空间</strong>。</p>
+<p>还有一点就是<strong>中文的编码效率其实理论上还可以更高</strong>，因为目前所有的处理流程都是按照英文的流程来的。比如 subword，对中文就完全没生效啊。</p>
+<figure class="highlight lasso"><table><tr><td class="code"><pre><span class="line">例如：</span><br><span class="line">oarfish 我虽然不知道是啥，但是猜测是条鱼。对于中文来说，“鲥”这个字我可能也不认识，但是我也猜测这是条鱼，但是这个字在中文肯定被表示成 <span class="built_in">bytes</span> 了，就没啥意义了</span><br></pre></td></tr></table></figure>
+<p>所以中文如何高效的编码，也应该是一个研究课题，我甚至感觉中文这种二维的文字，<strong>应该和图像的 tokenizer 有某种联系</strong>，比如在训练的时候，除了 id embedding，还有这个字对应的图片信息的 embedding。</p>
 <hr>
-<p>工具推荐： - 阿里的 token
-计算器：https://dashscope.console.aliyun.com/tokenizer - openai 的 token
-计算器：https://platform.openai.com/tokenizer - 文心的 token
-计算器：https://console.bce.baidu.com/support/?_=1725981678260#/tokenizer</p>
-<p>扩展问题： 1. 汉字的 tokenizer 是否还可以优化？ 2. 汉字如果要做
-subword 的话，有哪些方法？ 3. tokenization 对 LLM 有什么影响？</p>
+<p>工具推荐：</p>
+<ul>
+<li>阿里的 token 计算器：<a href="https://dashscope.console.aliyun.com/tokenizer">https://dashscope.console.aliyun.com/tokenizer</a></li>
+<li>openai 的 token 计算器：<a href="https://platform.openai.com/tokenizer">https://platform.openai.com/tokenizer</a></li>
+<li>文心的 token 计算器：<a href="https://console.bce.baidu.com/support/?_=1725981678260#/tokenizer">https://console.bce.baidu.com/support/?_=1725981678260#/tokenizer</a></li>
+</ul>
+<p>扩展问题：</p>
+<ol>
+<li>汉字的 tokenizer 是否还可以优化？</li>
+<li>汉字如果要做 subword 的话，有哪些方法？</li>
+<li>tokenization 对 LLM 有什么影响？</li>
+</ol>
 <p>进一步阅读：<br>
-[0] <a href="https://openreview.net/pdf?id=Pj4YYuxTq9">Language Model
-Tokenizers Introduce Unfairness Between Languages</a><br>
-[1] <a href="https://huggingface.co/learn/nlp-course/chapter2/4?fw=pt">huggingface
-tokenizer tutorial</a></p>
+[0] <a href="https://openreview.net/pdf?id=Pj4YYuxTq9">Language Model Tokenizers Introduce Unfairness Between Languages</a><br>
+[1] <a href="https://huggingface.co/learn/nlp-course/chapter2/4?fw=pt">huggingface tokenizer tutorial</a></p>
 ]]></content>
       <categories>
         <category>Transformers</category>
@@ -118,87 +108,73 @@ tokenizer tutorial</a></p>
 <span id="more"></span>
 <h2 id="为什么词表越大越好">为什么词表越大越好</h2>
 <p>目前已经有很多研究表明，词表越大模型效果会更好<br>
-<a href="https://arxiv.org/pdf/2406.16508">《Large Vocabulary Size
-Improves Large Language Models》</a>中详细对比了词表大小分别为：5k, 10k,
-50k, 100k, 500k的效果。</p>
-<p><img src="/p/5b4d8163/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare.png"></p>
+<a href="https://arxiv.org/pdf/2406.16508">《Large Vocabulary Size Improves Large Language Models》</a>中详细对比了词表大小分别为：5k, 10k, 50k, 100k, 500k的效果。</p>
+<p><img src="/p/5b4d8163/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare.png" alt></p>
 <blockquote>
 <p>从头训练的 GPT-3 Large 模型(760M)</p>
 </blockquote>
-<p><img src="/p/5b4d8163/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare_GPT3.png"></p>
+<p><img src="/p/5b4d8163/Large_Vocabulary_Size_Improves_Large_Language_Models_VocabSize_Compare_GPT3.png" alt></p>
 <blockquote>
 <p>基于 llama 模型，扩大词表继续训练</p>
 </blockquote>
-<h3 id="为什么词表变大会更好">为什么词表变大会更好？</h3>
-<ol type="1">
+<h3 id="为什么词表变大会更好？">为什么词表变大会更好？</h3>
+<ol>
 <li>计算效率的提升<br>
-相同的文本，转换为token后越短越好。通常用压缩率来衡量文本转换为token后的压缩比例。
-<strong>更高的压缩率代表了相同数量的token能够表达更多的信息，相同的信息
-token 越短则训练效率更高。</strong> <span class="math display">$$CompressionRate(V) = \frac{N\_Tokens}{N\_Words}
-$$</span> Baichuan 在技术报告里给出的一些模型的压缩率如下
-<div data-align="center">
-<p><img src="/p/5b4d8163/vocab_compression_rate_baichuan2.png" style="width: 70%;"></p>
-</div>
-然后千问在技术报告里也提到自家模型的压缩率比其他家更好</li>
+相同的文本，转换为token后越短越好。通常用压缩率来衡量文本转换为token后的压缩比例。<br>
+<strong>更高的压缩率代表了相同数量的token能够表达更多的信息，相同的信息 token 越短则训练效率更高。</strong><br>
+$$CompressionRate(V) = \frac{N_Tokens}{N_Words} $$<br>
+Baichuan 在技术报告里给出的一些模型的压缩率如下</li>
 </ol>
-<p><img src="/p/5b4d8163/vocab_compression_rate_qwen.png"></p>
-<ol type="1">
-<li><p>有助于理解文本<br>
-更多的词汇能够减少 OOV (Out of Vocabulary)的影响,
-训练的信息不会丢失，推理的时候泛化能力也更强。
-同时更多的词汇可以减少词汇分解后的歧义，从而更好地理解和生成文本。</p></li>
-<li><p>更长的上下文<br>
-预训练阶段往往都有最大序列长度的限制，压缩率更高代表着能看到更多的上下文，就能
-attention 到更多的信息。<a href="https://arxiv.org/pdf/2204.08832">《Impact of Tokenization on
-Language Models: An Analysis for Turkish》</a></p></li>
+<div align="center">
+    <img src="/p/5b4d8163/vocab_compression_rate_baichuan2.png" style="width: 70%;">
+</div>
+然后千问在技术报告里也提到自家模型的压缩率比其他家更好
+<p><img src="/p/5b4d8163/vocab_compression_rate_qwen.png" alt></p>
+<ol>
+<li>
+<p>有助于理解文本<br>
+更多的词汇能够减少 OOV (Out of Vocabulary)的影响, 训练的信息不会丢失，推理的时候泛化能力也更强。<br>
+同时更多的词汇可以减少词汇分解后的歧义，从而更好地理解和生成文本。</p>
+</li>
+<li>
+<p>更长的上下文<br>
+预训练阶段往往都有最大序列长度的限制，压缩率更高代表着能看到更多的上下文，就能 attention 到更多的信息。<a href="https://arxiv.org/pdf/2204.08832">《Impact of Tokenization on Language Models: An Analysis for Turkish》</a></p>
+</li>
 </ol>
 <h2 id="计算效率的考虑">计算效率的考虑</h2>
-<p>虽然 vocabulary 越大越好，但是也不能无限扩大。因为 vocabulary
-变大后，Embedding 层变大，最后输出的 Head layer 也会变大 <figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">比如 <span class="keyword">Llama3 </span>将 vocabulary 从 <span class="keyword">llama2 </span>的 <span class="number">32000</span> 扩展到 <span class="number">128256</span>，参数量就变大了。<span class="keyword">llama2 </span>还不到<span class="number">7</span>B，但是 <span class="keyword">Llama3 </span>有 <span class="number">8</span>B了（当然这里面还有其他参数的改动）</span><br></pre></td></tr></table></figure>
-<strong>参数更大，更占内存，而且输出的时候 softmax
-也更大，计算就更慢。</strong><br>
-目前业界普遍设置在 10万 到 20万左右。比如 Qwen 的 词表大小为
-152064，baichuan2为125696，llama3 为128256，deepseek 为 102400。
-<figure class="highlight stan"><table><tr><td class="code"><pre><span class="line">针对 <span class="built_in">softmax</span> 过大的问题目前也有解法，可以用 Adaptive <span class="built_in">softmax</span>，参考论文《Efficient <span class="built_in">softmax</span> approximation <span class="keyword">for</span> GPUs》(https:<span class="comment">//arxiv.org/pdf/1609.04309)</span></span><br></pre></td></tr></table></figure></p>
+<p>虽然 vocabulary 越大越好，但是也不能无限扩大。因为 vocabulary 变大后，Embedding 层变大，最后输出的 Head layer 也会变大</p>
+<figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">比如 <span class="keyword">Llama3 </span>将 vocabulary 从 <span class="keyword">llama2 </span>的 <span class="number">32000</span> 扩展到 <span class="number">128256</span>，参数量就变大了。<span class="keyword">llama2 </span>还不到<span class="number">7</span>B，但是 <span class="keyword">Llama3 </span>有 <span class="number">8</span>B了（当然这里面还有其他参数的改动）</span><br></pre></td></tr></table></figure>
+<p><strong>参数更大，更占内存，而且输出的时候 softmax 也更大，计算就更慢。</strong><br>
+目前业界普遍设置在 10万 到 20万左右。比如 Qwen 的 词表大小为 152064，baichuan2为125696，llama3 为128256，deepseek 为 102400。</p>
+<figure class="highlight stan"><table><tr><td class="code"><pre><span class="line">针对 <span class="built_in">softmax</span> 过大的问题目前也有解法，可以用 Adaptive <span class="built_in">softmax</span>，参考论文《Efficient <span class="built_in">softmax</span> approximation <span class="keyword">for</span> GPUs》(https:<span class="comment">//arxiv.org/pdf/1609.04309)</span></span><br></pre></td></tr></table></figure>
 <h2 id="内存对齐">内存对齐</h2>
-<p>很多时候模型上的一些设置其实跟硬件息息相关。例如： <figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">Qwen</span> 的readme 和 训练代码中 vocabulary 的数量不一样， readme 中为 <span class="number">151643</span>，但是实际上代码里写的是 <span class="number">152064</span></span><br></pre></td></tr></table></figure>
-因为最终Embedding 矩阵和输出时候的 Head Layer 最终都会转换成矩阵放到 GPU
-的 Tensor Core 中计算。而根据英伟达的开发手册，矩阵运算最好根据 GPU
-和计算类型满足如下的条件：</p>
-<p><img src="/p/5b4d8163/Tensor_Core_Nvidia.png"></p>
-Karpathy 也曾经证实了这一点，他当时写了个
-nanoGPT，提升最大的点就是把词表从 50257 改成了
-50304，后一个是64的倍数。然后带来了25%的速度上的提升。
-<div data-align="center">
-<pre><code>&lt;img src=&quot;./Transformers-LLM-的词表应该选多大/karpathy_nanoGPT_twitter.png&quot; style=&quot;width: 70%;&quot;&gt;&lt;/img&gt;</code></pre>
+<p>很多时候模型上的一些设置其实跟硬件息息相关。例如：</p>
+<figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">Qwen</span> 的readme 和 训练代码中 vocabulary 的数量不一样， readme 中为 <span class="number">151643</span>，但是实际上代码里写的是 <span class="number">152064</span></span><br></pre></td></tr></table></figure>
+<p>因为最终Embedding 矩阵和输出时候的 Head Layer 最终都会转换成矩阵放到 GPU 的 Tensor Core 中计算。而根据英伟达的开发手册，矩阵运算最好根据 GPU 和计算类型满足如下的条件：</p>
+<p><img src="/p/5b4d8163/Tensor_Core_Nvidia.png" alt></p>
+<p>Karpathy 也曾经证实了这一点，他当时写了个 nanoGPT，提升最大的点就是把词表从 50257 改成了 50304，后一个是64的倍数。然后带来了25%的速度上的提升。</p>
+<div align="center">
+    <img src="/p/5b4d8163/karpathy_nanoGPT_twitter.png" style="width: 70%;">
 </div>
-<p>所以目前大多数训练都在 A100
-上训练，基本上都是64的倍数。如果某个模型的词表不是
-64的倍数，那可能不知不觉浪费了很多计算资源。</p>
+<p>所以目前大多数训练都在 A100 上训练，基本上都是64的倍数。如果某个模型的词表不是 64的倍数，那可能不知不觉浪费了很多计算资源。</p>
 <hr>
 <h2 id="扩展问题">扩展问题</h2>
-<ol type="1">
+<ol>
 <li>目前常用的 Tokenization 都有哪些？</li>
-<li>能否介绍一下BPE（Byte Pair
-Encoding）、WordPiece、SentencePiece等分词算法，它们如何影响词表大小的选择？</li>
+<li>能否介绍一下BPE（Byte Pair Encoding）、WordPiece、SentencePiece等分词算法，它们如何影响词表大小的选择？</li>
 <li>如何平衡词表大小和模型的计算效率？</li>
 <li>词表过大，softmax 计算太慢怎么办？</li>
 <li>两个词表size： 128000 和 123321 哪个更好？</li>
 </ol>
-<h2 id="reference-进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+<h2 id="Reference-进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
 <p>[0] <a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">矩阵相乘的最佳大小</a><br>
-[1] <a href="https://arxiv.org/pdf/2406.16508">Large Vocabulary Size
-Improves Large Language Models</a><br>
-[2] <a href="https://arxiv.org/abs/2204.08832">Impact of Tokenization on
-Language Models: An Analysis for Turkish</a><br>
-[3] <a href="https://arxiv.org/abs/1609.04309">Efficient softmax
-approximation for GPUs</a><br>
-[4] <a href="https://github.com/QwenLM/Qwen/issues/419">qwen
-词表大小的一些疑问</a><br>
-[5] <a href="https://arxiv.org/pdf/2309.10305">Baichuan 2: Open
-Large-scale Language Models</a><br>
-[6] <a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">Matrix
-Multiplication Background User’s Guide</a></p>
+[1] <a href="https://arxiv.org/pdf/2406.16508">Large Vocabulary Size Improves Large Language Models</a><br>
+[2] <a href="https://arxiv.org/abs/2204.08832">Impact of Tokenization on Language Models: An Analysis for Turkish</a><br>
+[3] <a href="https://arxiv.org/abs/1609.04309">Efficient softmax approximation for GPUs</a><br>
+[4] <a href="https://github.com/QwenLM/Qwen/issues/419">qwen 词表大小的一些疑问</a><br>
+[5] <a href="https://arxiv.org/pdf/2309.10305">Baichuan 2: Open Large-scale Language Models<br>
+</a><br>
+[6] <a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">Matrix Multiplication Background User’s Guide</a></p>
 ]]></content>
       <categories>
         <category>Transformers</category>
