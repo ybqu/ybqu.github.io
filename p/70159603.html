@@ -22,24 +22,31 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ybqu.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.24.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":-1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="I always want to calm down and write something.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="DouDou&#39;s blog">
-<meta property="og:url" content="https://ybqu.github.io/categories/Transformers/Tokenization/index.html">
+    <meta name="description" content="需要看 tokenizer 的实现算法，如果 tokenizer 是采用类似 Byte-level BPE 的算法，就可以做到无损还原  这是因为 Byte-level 的 BPE 算法在构建 token 的时候， 完全是基于字节来统计的，所以其可以对任意的数据进行 encode，不只是局限于文本数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么">
+<meta property="og:url" content="https://ybqu.github.io/p/70159603.html">
 <meta property="og:site_name" content="DouDou&#39;s blog">
-<meta property="og:description" content="I always want to calm down and write something.">
+<meta property="og:description" content="需要看 tokenizer 的实现算法，如果 tokenizer 是采用类似 Byte-level BPE 的算法，就可以做到无损还原  这是因为 Byte-level 的 BPE 算法在构建 token 的时候， 完全是基于字节来统计的，所以其可以对任意的数据进行 encode，不只是局限于文本数据">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ybqu.github.io/p/70159603/llama2chat_example.png">
+<meta property="article:published_time" content="2025-08-30T08:55:55.000Z">
+<meta property="article:modified_time" content="2025-08-30T09:00:48.187Z">
 <meta property="article:author" content="DouDou.Ybqu">
+<meta property="article:tag" content="Transformers">
+<meta property="article:tag" content="Tokenization">
+<meta property="article:tag" content="面试刷题">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ybqu.github.io/p/70159603/llama2chat_example.png">
 
 
-<link rel="canonical" href="https://ybqu.github.io/categories/Transformers/Tokenization/">
+<link rel="canonical" href="https://ybqu.github.io/p/70159603.html">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"categories/Transformers/Tokenization/index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ybqu.github.io/p/70159603.html","path":"p/70159603.html","title":"给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>分类: Tokenization | DouDou's blog</title>
+<title>给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么 | DouDou's blog</title>
   
 
 
@@ -72,7 +79,7 @@
 
   
 
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"ams","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"ams","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
 <script src="/js/third-party/math/mathjax.js" defer></script>
 
 
@@ -222,111 +229,177 @@
 
     </div>
 
-    <div class="main-inner category posts-collapse">
+    <div class="main-inner post posts-expand">
 
 
   
+
+
+<div class="post-block">
   
   
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        <h1 class="collection-header">Tokenization
-          <small>分类</small>
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ybqu.github.io/p/70159603.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="DouDou.Ybqu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="DouDou's blog">
+      <meta itemprop="description" content="I always want to calm down and write something.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么 | DouDou's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么
         </h1>
-      </div>
 
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
       
-    <div class="collection-year">
-      <span class="collection-header">2025</span>
+
+      <time title="创建时间：2025-08-30 16:55:55 / 修改时间：17:00:48" itemprop="dateCreated datePublished" datetime="2025-08-30T16:55:55+08:00">2025-08-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Transformers/" itemprop="url" rel="index"><span itemprop="name">Transformers</span></a>
+        </span>
+          ，
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Transformers/Tokenization/" itemprop="url" rel="index"><span itemprop="name">Tokenization</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><hr>
+<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似
+<code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
+<blockquote>
+<p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候，
+完全是基于字节来统计的，所以其可以对任意的数据进行
+encode，不只是局限于文本数据 <span id="more"></span></p>
+</blockquote>
+<p>例如：<br>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">stay foolish stay hungry</span></span><br></pre></td></tr></table></figure> - 如果是 word 粒度的 tokenize 方法，那处理的对象是 word，
+那第一步可能先把 stay 给变成 token，因为 stay 出现了2次 - 如果是 char
+粒度的， 那处理的力度就是字母，那会先把 st, ta, y_, oo 先变成 token</p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">非Byte level的tokenizer是基于现有文本元素来进行组合。比如英文就是<span class="number">26</span>个大小写字母还有其他标点等符号，中文则是汉字</span><br><span class="line"></span><br><span class="line">这样做总是会存在一个OOV的问题，比如现在有个单词，clever，那就没法表示了，只能用一个统一的<span class="built_in">token</span>来表示</span><br><span class="line"></span><br><span class="line">那自然英文的tokenizer就没法给中文做tokenzier</span><br></pre></td></tr></table></figure>
+<p>Byte-level处理的对象是字节。不管是什么语言，最终在计算机里都是二进制的数据。<br>
+比如单词 stay 在计算机里表示如下： <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">s</span>: <span class="number">01110011</span> (<span class="number">0</span>x73)</span><br><span class="line"><span class="attribute">t</span>: <span class="number">01110100</span> (<span class="number">0</span>x74)</span><br><span class="line"><span class="attribute">a</span>: <span class="number">01100001</span> (<span class="number">0</span>x61)</span><br><span class="line"><span class="attribute">y</span>: <span class="number">01111001</span> (<span class="number">0</span>x79)</span><br></pre></td></tr></table></figure> 在训练 tokenize
+模型的时候，直接统计字节的pair。比如(0x73,0x74)出现次数最多，则优先变成token。</p>
+<blockquote>
+<p>由于所有的数据都是由字节组成的，而初始的 token 只需要 256 个，
+就覆盖了所有的可能，所以完全没有OOV的问题。</p>
+</blockquote>
+<p>对于汉字是由 Unicode 的组成的，比如“看图学”这三个字，用 Unicode
+的十六进制表示为 <figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">看：<span class="number">0x770B</span></span><br><span class="line">图：<span class="number">0x56FE</span></span><br><span class="line">学：<span class="number">0x5B66</span></span><br></pre></td></tr></table></figure> &gt; Byte
+level的不管原始的信息是什么，就是直接用字节组合。所以这个时候，英文的
+tokenizer 也可以给汉字编码，因为汉字也可以表示成字节</p>
+<p>比如 llama 2 的词表里大概有5k
+多个汉字，其他不在词表里的汉字，可能需要多个 token
+来表示一个汉字，这就造成了吞吐效率的极大浪费，所以需要加入新的词表对
+llama 进行 post pretrain 才行。<br>
+比如你问 llama2
+问题，对于输入的中文还是可以理解的，但是输出的时候还是倾向于用英文来输出：
+<img src="/p/70159603/llama2chat_example.png"></p>
+<hr>
+<p>扩展问题： 1. 常用的 tokenize 方法都有哪些？（本合集里有答案） 2.
+这些方法各自有什么优缺点？ 3. 什么情况下，比较适合扩充 tokenizer
+的词表？</p>
+<p>进一步阅读：<br>
+[0] <a target="_blank" rel="noopener" href="https://github.com/ymcui/Chinese-LLaMA-Alpaca">Chinese-LLaMA-Alpaca
+/ 词表扩充，哈工大崔一鸣</a></p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2025-08-30T16:55:55+08:00"
-              content="2025-08-30">
-          08-30
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/p/70159603.html" itemprop="url">
-            <span itemprop="name">给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么</span>
-          </a>
-      </div>
+    <footer class="post-footer">
+          
 
-      
-    </header>
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>DouDou.Ybqu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ybqu.github.io/p/70159603.html" title="给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么">https://ybqu.github.io/p/70159603.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Transformers/" rel="tag"><i class="fa fa-tag"></i> Transformers</a>
+              <a href="/tags/Tokenization/" rel="tag"><i class="fa fa-tag"></i> Tokenization</a>
+              <a href="/tags/%E9%9D%A2%E8%AF%95%E5%88%B7%E9%A2%98/" rel="tag"><i class="fa fa-tag"></i> 面试刷题</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/p/635901b3.html" rel="prev" title="Tokenization是什么">
+                  <i class="fa fa-angle-left"></i> Tokenization是什么
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
   </article>
+</div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2025-08-30T16:49:50+08:00"
-              content="2025-08-30">
-          08-30
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/p/635901b3.html" itemprop="url">
-            <span itemprop="name">Tokenization是什么</span>
-          </a>
-      </div>
 
-      
-    </header>
-  </article>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2025-08-30T16:37:58+08:00"
-              content="2025-08-30">
-          08-30
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/p/d516c1d6.html" itemprop="url">
-            <span itemprop="name">大模型一个token能代表几个单词和汉字？</span>
-          </a>
-      </div>
 
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2025-08-30T16:05:09+08:00"
-              content="2025-08-30">
-          08-30
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/p/5b4d8163.html" itemprop="url">
-            <span itemprop="name">Transformers/LLM 的词表应该选多大?</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-    </div>
-  </div>
-  
-  
-  
-
+    <div class="comments utterances-container"></div>
 </div>
   </main>
 
