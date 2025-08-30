@@ -3,8 +3,7 @@
   <entry>
     <title>给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么</title>
     <url>/p/70159603.html</url>
-    <content><![CDATA[<hr>
-<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似 <code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
+    <content><![CDATA[<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似 <code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
 <blockquote>
 <p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候， 完全是基于字节来统计的，所以其可以对任意的数据进行 encode，不只是局限于文本数据</p>
 </blockquote>
@@ -70,8 +69,7 @@
   <entry>
     <title>大模型一个token能代表几个单词和汉字？</title>
     <url>/p/d516c1d6.html</url>
-    <content><![CDATA[<hr>
-<blockquote>
+    <content><![CDATA[<blockquote>
 <p>一段一万字的 prompt，输入到最大长度为 8192 的模型，是否能正确的输出？</p>
 </blockquote>
 <p>每个模型的 Tokenizer 都不太一样，所以这个问题不能给出很精确的答案，更多的是考察一些大模型的使用经验。</p>
@@ -122,8 +120,7 @@
   <entry>
     <title>Transformers/LLM 的词表应该选多大?</title>
     <url>/p/5b4d8163.html</url>
-    <content><![CDATA[<hr>
-<figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line"><span class="bullet">1.</span> 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好</span><br><span class="line"><span class="bullet">2.</span> 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果</span><br><span class="line"><span class="bullet">3.</span> 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）</span><br></pre></td></tr></table></figure>
+    <content><![CDATA[<figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line"><span class="bullet">1.</span> 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好</span><br><span class="line"><span class="bullet">2.</span> 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果</span><br><span class="line"><span class="bullet">3.</span> 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 <h2 id="为什么词表越大越好">为什么词表越大越好</h2>
 <p>目前已经有很多研究表明，词表越大模型效果会更好<br>

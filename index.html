@@ -262,7 +262,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2025-08-30 16:55:55 / 修改时间：17:49:38" itemprop="dateCreated datePublished" datetime="2025-08-30T16:55:55+08:00">2025-08-30</time>
+      <time title="创建时间：2025-08-30 16:55:55 / 修改时间：18:30:30" itemprop="dateCreated datePublished" datetime="2025-08-30T16:55:55+08:00">2025-08-30</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -303,8 +303,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <hr>
-<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似 <code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
+          <p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似 <code>Byte-level BPE</code> 的算法，就可以做到无损还原</strong></p>
 <blockquote>
 <p>这是因为 Byte-level 的 BPE 算法在构建 token 的时候， 完全是基于字节来统计的，所以其可以对任意的数据进行 encode，不只是局限于文本数据</p>
 </blockquote>
@@ -476,7 +475,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2025-08-30 16:37:58 / 修改时间：17:44:06" itemprop="dateCreated datePublished" datetime="2025-08-30T16:37:58+08:00">2025-08-30</time>
+      <time title="创建时间：2025-08-30 16:37:58 / 修改时间：18:30:23" itemprop="dateCreated datePublished" datetime="2025-08-30T16:37:58+08:00">2025-08-30</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -517,8 +516,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <hr>
-<blockquote>
+          <blockquote>
 <p>一段一万字的 prompt，输入到最大长度为 8192 的模型，是否能正确的输出？</p>
 </blockquote>
 <p>每个模型的 Tokenizer 都不太一样，所以这个问题不能给出很精确的答案，更多的是考察一些大模型的使用经验。</p>
@@ -586,7 +584,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2025-08-30 16:05:09 / 修改时间：16:37:15" itemprop="dateCreated datePublished" datetime="2025-08-30T16:05:09+08:00">2025-08-30</time>
+      <time title="创建时间：2025-08-30 16:05:09 / 修改时间：18:30:40" itemprop="dateCreated datePublished" datetime="2025-08-30T16:05:09+08:00">2025-08-30</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -627,8 +625,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <hr>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好</span><br><span class="line"><span class="bullet">2.</span> 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果</span><br><span class="line"><span class="bullet">3.</span> 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）</span><br></pre></td></tr></table></figure>
+          <figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好</span><br><span class="line"><span class="bullet">2.</span> 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果</span><br><span class="line"><span class="bullet">3.</span> 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/p/5b4d8163.html#more" rel="contents">
