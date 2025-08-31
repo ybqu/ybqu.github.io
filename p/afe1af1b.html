@@ -1,0 +1,542 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>给一个网络结构，如何计算模型的参数量 | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Linear  1Linear(in_features&#x3D;w, out_features&#x3D;h, bias&#x3D;True)  就是个矩阵，有时候会加上bias。参数量为：\(w*h+h\),如果bias&#x3D;False，则为\(w*h\)  Embedding  可以认为是一个没有 bias 的 Linear  Norm   Layer Norm里面有两个可训练参数,\(\gamma\)和\(\beta\)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="给一个网络结构，如何计算模型的参数量">
+<meta property="og:url" content="https://ybqu.github.io/p/afe1af1b.html">
+<meta property="og:site_name" content="DouDou&#39;s blog">
+<meta property="og:description" content="Linear  1Linear(in_features&#x3D;w, out_features&#x3D;h, bias&#x3D;True)  就是个矩阵，有时候会加上bias。参数量为：\(w*h+h\),如果bias&#x3D;False，则为\(w*h\)  Embedding  可以认为是一个没有 bias 的 Linear  Norm   Layer Norm里面有两个可训练参数,\(\gamma\)和\(\beta\)">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ybqu.github.io/images/model_parameters.png">
+<meta property="article:published_time" content="2025-08-31T09:22:39.000Z">
+<meta property="article:modified_time" content="2025-08-31T09:22:39.000Z">
+<meta property="article:author" content="DouDou.Ybqu">
+<meta property="article:tag" content="LLMs">
+<meta property="article:tag" content="Transformers">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ybqu.github.io/images/model_parameters.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "给一个网络结构，如何计算模型的参数量",
+  "url": "https://ybqu.github.io/p/afe1af1b.html",
+  "image": "https://ybqu.github.io/images/model_parameters.png",
+  "datePublished": "2025-08-31T09:22:39.000Z",
+  "dateModified": "2025-08-31T09:22:39.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "DouDou.Ybqu",
+      "url": "https://ybqu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://ybqu.github.io/p/afe1af1b.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          const hour = new Date().getHours()
+          const isNight = hour <= 24 || hour >= 18
+          if (theme === undefined) isNight ? activateDarkMode() : activateLightMode()
+          else theme === 'light' ? activateLightMode() : activateDarkMode()
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":true,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":330,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '给一个网络结构，如何计算模型的参数量',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js/pace.min.js"></script><div id="web_bg" style="background-image: url(/img/background_gril.jpeg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar-modified.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">21</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">24</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/avatar-circular.png" alt="Logo"><span class="site-name">DouDou's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">给一个网络结构，如何计算模型的参数量</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">给一个网络结构，如何计算模型的参数量</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-08-31T09:22:39.000Z" title="发表于 2025-08-31 17:22:39">2025-08-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-08-31T09:22:39.000Z" title="更新于 2025-08-31 17:22:39">2025-08-31</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/">LLMs</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/Transformers/">Transformers</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83/">模型训练</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/Transformers/Parameters/">Parameters</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">388</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>1分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;It has been&quot;,&quot;messageNext&quot;:&quot;days since the last update, the content of the article may be outdated.&quot;,&quot;postUpdate&quot;:&quot;2025-08-31 17:22:39&quot;}" hidden></div><blockquote>
+<p>Linear</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Linear(in_features=w, out_features=h, bias=True)</span><br></pre></td></tr></table></figure>
+
+<p>就是个矩阵，有时候会加上bias。参数量为：<span class="math inline">\(w*h+h\)</span>,如果bias=False，则为<span class="math inline">\(w*h\)</span></p>
+<blockquote>
+<p>Embedding</p>
+</blockquote>
+<p>可以认为是一个没有 bias 的 Linear</p>
+<blockquote>
+<p>Norm</p>
+</blockquote>
+<ul>
+<li><p><code>Layer Norm</code>里面有两个可训练参数,<span class="math inline">\(\gamma\)</span>和<span class="math inline">\(\beta\)</span>, 假设hidden_size 的大小为 <span class="math inline">\(h\)</span>, hidden_size 的每一维都有两个，所以是
+<span class="math inline">\(2h\)</span> 个</p></li>
+<li><p><code>RMSNorm</code> 每一维则只有一个可训练参数<span class="math inline">\(\gamma\)</span>, 所以有 <span class="math inline">\(h\)</span> 个</p></li>
+</ul>
+<blockquote>
+<p>Active 和 Dropout</p>
+</blockquote>
+<p>没有可训练参数</p>
+<hr>
+<p>以 llama3 和 qwen2 举例：</p>
+<blockquote>
+<p>meta-llama/Meta-Llama-3-8B</p>
+</blockquote>
+<p>模型结构</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoModelForCausalLM</span><br><span class="line">model_llama3 = AutoModelForCausalLM.from_pretrained(  </span><br><span class="line">    model_path, </span><br><span class="line">    tie_word_embeddings=<span class="literal">False</span>,</span><br><span class="line">    token=access_token</span><br><span class="line">  )</span><br><span class="line"><span class="built_in">print</span>(model_llama3)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/p/afe1af1b/llama3-8B-parameters.png"></p>
+<p>则参数量等于：<br>
+128256 * 4096 + 32 * (4096 * 4096 * 2 + 4096 * 1024 * 2 + 4096 * 14336 *
+3 + 2 * 4096) + 4096 + 128256 * 4096 = 8030261248</p>
+<p>所以 llama3 8B 的真实参数量为：<strong>8030261248</strong></p>
+<blockquote>
+<p>Qwen2-7B</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">model_qwen_lm = AutoModelForCausalLM.from_pretrained(</span><br><span class="line">    model_qwen,</span><br><span class="line">    trust_remote_code=True</span><br><span class="line">  )</span><br><span class="line">print(model_qwen_lm)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/p/afe1af1b/qwen2-7B-parameters.png"></p>
+<blockquote>
+<p>注：通过参数，可以看出 llama3 和 qwen2 的词表大小都是64的倍数</p>
+</blockquote>
+<p>参数量计算：<br>
+151936 * 4096 + 32 * (4096 * 2 + 12288 * 4096 + 12288 + 4096 * 4096 +
+11008 * 4096 * 3) + 4096 + 4096 * 151936 = 7721324544 所以 qwen 7B
+<strong>的真实参数量为：7721324544</strong></p>
+<hr>
+<p>pytorch 提供的函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def count_parameters(model):</span><br><span class="line">    return sum(</span><br><span class="line">      p.numel() </span><br><span class="line">      for p in model.parameters() if p.requires_grad</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="扩展问题">扩展问题</h2>
+<ol type="1">
+<li>Normalization 会引入新的参数么？</li>
+<li>共享参数一般如何实现？举例说明</li>
+<li>模型的参数量与模型的计算复杂度（FLOPs）之间有什么关系？</li>
+<li>模型参数量与模型性能之间是否总是存在正相关？能否举例说明一些反例，即参数量较少但性能优秀的模型设计？</li>
+</ol>
+<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+<p>[0] <a target="_blank" rel="noopener" href="https://discuss.pytorch.org/t/how-do-i-check-the-number-of-parameters-of-a-model/4325/5">pytorch
+如何统计参数</a><br>
+[1] <a target="_blank" rel="noopener" href="https://paperswithcode.com/method/weight-tying">weight
+tying 的解释</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://ybqu.github.io">DouDou.Ybqu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://ybqu.github.io/p/afe1af1b.html">https://ybqu.github.io/p/afe1af1b.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://ybqu.github.io" target="_blank">DouDou's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/LLMs/">LLMs</a><a class="post-meta__tags" href="/tags/Transformers/">Transformers</a></div><div class="post-share"><div class="social-share" data-image="/images/model_parameters.png" data-sites="twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/p/c60908d3.html" title="MCP 是什么？怎么实现的？"><img class="cover" src="/images/MCP.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">MCP 是什么？怎么实现的？</div></div><div class="info-2"><div class="info-item-1"> 大概2023年6月，OpenAI 的 API 提供了 function call功能 大概2024年底，在 function call 的基础上，Anthropic 提出了 MCP (Model-Content-Protocol)。  当然在实际的产生调用工具的请求也可以是其他的实现，function call 是目前最常用的模式。MCP 的工作模式其实并不难，用一张图就能说清楚：         MCP 隐藏了很多技术细节，让开发者只需要调用一次 API，就能访调用多种工具来实现自己的功能。而这里面最重要的就是 Function Call。 Function Call 流程和原理这个function call功能流程如下（这里以调用python为例，实际上可以是任何语言或者api）：          User-&gt;ChatGPT：提供给ChatGPT一些函数，每个函数要写清楚函数的名称(name), 函数的作用(description)和参数(parameters)。并且问ChatGPT一个问题 ChatGPT-&gt;User：ChatGPT会判断需不需要调用你提供的...</div></div></div></a><a class="pagination-related" href="/p/4d14af89.html" title="一些面试题集合-1"><img class="cover" src="/img/coffee.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">一些面试题集合-1</div></div><div class="info-2"><div class="info-item-1">苏剑林｜为什么现在的LLM都是Decoder-only的架构？ 为什么现在的LLM都是Decoder only的架构？ 苏剑林｜《为什么现在的LLM都是Decoder-only的架构？》FAQ 为什么现在 Decoder-only 成为大模型的主流架构，相比于 Encoder-Decoder 的架构好在哪里？ 主要有三方面的原因，包括工程实现、计算效率、以及任务适配度  工程实现优势  Decoder-only 简化了 Transformer 的工程实现，仅需要实现 Masked Attention 机制，无需考虑无 Mask 的 Attention，以及 Cross-Attention 的复杂性  计算效率优势  节省参数：在同等深度（层数）设定下，并且假设超参数设置相同（如头数、隐层维数），Decoder-only 的参数量是 Encoder-Decoder 的一半 节省算力：Encoder-Decoder 架构的 Encoder 部分采用无掩模的注意力机制，只有 Decoder 部分采用 Masked Attention，Masked Attention 计算量是无掩模 A...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/p/4d14af89.html" title="一些面试题集合-1"><img class="cover" src="/img/coffee.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">一些面试题集合-1</div></div><div class="info-2"><div class="info-item-1">苏剑林｜为什么现在的LLM都是Decoder-only的架构？ 为什么现在的LLM都是Decoder only的架构？ 苏剑林｜《为什么现在的LLM都是Decoder-only的架构？》FAQ 为什么现在 Decoder-only 成为大模型的主流架构，相比于 Encoder-Decoder 的架构好在哪里？ 主要有三方面的原因，包括工程实现、计算效率、以及任务适配度  工程实现优势  Decoder-only 简化了 Transformer 的工程实现，仅需要实现 Masked Attention 机制，无需考虑无 Mask 的 Attention，以及 Cross-Attention 的复杂性  计算效率优势  节省参数：在同等深度（层数）设定下，并且假设超参数设置相同（如头数、隐层维数），Decoder-only 的参数量是 Encoder-Decoder 的一半 节省算力：Encoder-Decoder 架构的 Encoder 部分采用无掩模的注意力机制，只有 Decoder 部分采用 Masked Attention，Masked Attention 计算量是无掩模 A...</div></div></div></a><a class="pagination-related" href="/p/53a334ca.html" title="FeedForward介绍"><img class="cover" src="/images/FFN&&FFNSwiGLU.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">FeedForward介绍</div></div><div class="info-2"><div class="info-item-1">为什么transformer的FFN需要先升维再降维？ FFN参数占比 1FFN 参数占整个 Transformers 参数的 2/3  证明： FFN的作用 FFN（还有 ResNet）是 Transformers 的必备模块，没有 FFN（或者 ResNet）的 Transformers 学不到什么东西  《Attention is Not All You Need: Pure Attention Loses Rank Doubly Exponentially with Depth》  论文提出 Transformers 架构存在 token uniformity 的归纳偏置 (inductive bias，有时候也叫归纳 偏好) 问题。如果去掉 FFN 或者 Resnet，问题更加严重 1归纳偏置：可以通俗的理解为模型的“个性”，就是满足训练集合的解法有无数种，但是不同的模型架构会让模型更偏向于某些解法。比如我们常用的一些正则化方法，其实就是让模型的归纳偏置倾向于选择一些简单的解法。任何模型都有归纳偏置，尤其是碰到未见过的样本的时候，模型的归纳偏置就更容易体现出来。  Tr...</div></div></div></a><a class="pagination-related" href="/p/e9330822.html" title="DeepSeek的MoE为何把门控从softmax变成sigmoid"><img class="cover" src="/images/sigmoid.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">DeepSeek的MoE为何把门控从softmax变成sigmoid</div></div><div class="info-2"><div class="info-item-1">DeepSeek-V3 把 MoE 门控从 softmax → sigmoid 的核心原因有几下几点：  专家维度爆炸：V3 路由专家从 \(160\to 256\)，维度越高，softmax的归一化越会把分数压向\(1/N\)，Top-K区分度骤降  Softmax 先把所有 logit 减去最大值防止溢出，再取exp，最后除以总和。 当专家数 N 很大（256 vs 160）时，logit 的方差往往不大，exp 后的值会非常接近； 于是归一化结果 \(\approx 1/N\)，大家几乎一样高  数值稳定性： softmax 需要整体求和，FP32下小数位误差被放大；sigmoid 每个专家独立计算，避免累加误差   梯度更稳：softmax饱和区梯度小、易出现“赢者通吃”；sigmoid梯度平滑，训练更稳定   “多标签”视角：激活8个专家本质是多标签问题，sigmoid 给每个专家独立 0–1 分，比 softmax 的“互斥”假设更自然  123456789101112131415161718# codingimport torchimport matplotlib....</div></div></div></a><a class="pagination-related" href="/p/b8cccfc6.html" title="RoPE（旋转位置编码）的原理"><img class="cover" src="/images/RoPE.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">RoPE（旋转位置编码）的原理</div></div><div class="info-2"><div class="info-item-1">RoPE，旋转位置编码，是苏神提出的位置编码方法，由于其很好的捕获了相对位置以及具备很好的外推性，现在大模型基本都采用这个编码方式 苏剑林|Transformer升级之路：2、博采众长的旋转式位置编码  绝对位置编码的实现 我觉得 Transformers 里面的绝对位置编码的方式是构建 RoPE 的灵感来源。 绝对位置编码是一个顺时针旋转的钟表系统，这个信息会与输入相加。但是旋转位置编码是一个逆时针旋转的时钟系统，并没有采用相加的方式，而是直接将输入进行了旋转 实数域的 RoPE 解释 RoPE的实现和解释，完全可以只在实数域中进行。比如 llama 的实现，就完全没有用到复数的概念。 而在实数域上关于 RoPE 的解释，核心就一句话：在内积空间中，内积具有旋转不变性。  内积就是一个向量在另一个向量上的投影乘以另一个向量的长度。当这两个向量旋转相同的角度后，相对位置并没有发生变化，内积自然也一样  证明也不难：          也就是说两个旋转向量的内积等于其中一个向量旋转它们角度差的结果与另一个原始向量的内积  这个性质与RoPE的关系：  RoPE的核心就是找到一个函数...</div></div></div></a><a class="pagination-related" href="/p/c9b0c1b4.html" title="PositionEmbedding的作用"><img class="cover" src="/images/Sinusoidal_Position_Embedding_v2.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">PositionEmbedding的作用</div></div><div class="info-2"><div class="info-item-1">首先要知道 transformers 是设计用来做机器翻译的，当机器翻译的架构从 RNN 进化到 transformers 之后，位置信息就丢失了  和 RNN 的逐步迭代相比，attention 可以认为是个全连接图（如果是 causal attention 则有些边断开），不会考虑位置 这样就导致对于 attention 看来，“八王大“和“大王八” 是一样的  所以 Position Embedding 的作用，就是在把 Word Embedding 送入 attention 之前，把位置信息给带上。  论文中的给出了一个绝对位置编码，叫 Sinusoidal Position Embedding，这个编码会和输入的词向量相加。文中的位置编码函数如下： \[PE(pos, 2i) = sin(\frac{pos}{10000^{2i / d_{model}}})\] \[PE(pos, 2i+1) = cos(\frac{pos}{10000^{2i / d_{model}}})\]  We chose this function because we hypothesiz...</div></div></div></a><a class="pagination-related" href="/p/ec99b0e4.html" title="DeepSeek-MLA在prefill和decode时算子不同根本原因"><img class="cover" src="/images/MLA%EF%BC%8CMHA%EF%BC%8CGQA%EF%BC%8CMQA%E5%AF%B9%E6%AF%94%E5%9B%BE.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">DeepSeek-MLA在prefill和decode时算子不同根本原因</div></div><div class="info-2"><div class="info-item-1"> prefill是compute bound，首要任务是解决算的慢问题(要牺牲存储，换取计算) decode是memory bound，首要任务是解决显存占用多和访存慢问题(要牺牲计算，换取存储)  通过下面对两阶段的几个互相成对的问题，我们从compute bound和memory bound的角度，来深入感受下为啥deepseek的MLA要在这俩阶段用不同的算子： Prefill阶段 为什么要显式升维？  因为MHA用的是FA算子，这个算子被优化的很好，也做了算子融合，GPU跑FA时候很爽很痛快，而且prefill阶段是compute bound，所以想在prefill阶段尽可能去用MHA算子，加速计算，所以能降时延 为什么不隐式计算？ 隐式计算过程包含了多个小的GEMM，没法用FA，GEMM本身倒是不拉，但是一堆琐碎的GEMM导致GPU算的很不爽，得一会儿搬数据一会儿调度算子一会儿读写中间变量的，这样搞时延就很拉了，所以主要是想用FA算子来加速计算 那存储问题不管了？升维后显存占用大啊？ prefill时要算的token太多，首要问题是算的慢，主要是compute boun...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar-modified.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">DouDou.Ybqu</div><div class="author-info-description">I always want to calm down and write something.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">21</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">24</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ybqu"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A9%E5%B1%95%E9%97%AE%E9%A2%98"><span class="toc-number">1.</span> <span class="toc-text">扩展问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#reference--%E8%BF%9B%E4%B8%80%E6%AD%A5%E9%98%85%E8%AF%BB"><span class="toc-number">2.</span> <span class="toc-text">Reference &amp;&amp; 进一步阅读</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/p/5f1b788d.html" title="pytorch常用操作"><img src="/images/pytorch.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="pytorch常用操作"/></a><div class="content"><a class="title" href="/p/5f1b788d.html" title="pytorch常用操作">pytorch常用操作</a><time datetime="2025-08-31T10:26:30.000Z" title="发表于 2025-08-31 18:26:30">2025-08-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/2390d019.html" title="vscode：python-debug配置"><img src="/images/vscode-debug.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="vscode：python-debug配置"/></a><div class="content"><a class="title" href="/p/2390d019.html" title="vscode：python-debug配置">vscode：python-debug配置</a><time datetime="2025-08-31T10:21:45.000Z" title="发表于 2025-08-31 18:21:45">2025-08-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/428f41e1.html" title="为什么需要KVCache"><img src="/images/attention_wCache_example.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="为什么需要KVCache"/></a><div class="content"><a class="title" href="/p/428f41e1.html" title="为什么需要KVCache">为什么需要KVCache</a><time datetime="2025-08-31T10:14:29.000Z" title="发表于 2025-08-31 18:14:29">2025-08-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/c60908d3.html" title="MCP 是什么？怎么实现的？"><img src="/images/MCP.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="MCP 是什么？怎么实现的？"/></a><div class="content"><a class="title" href="/p/c60908d3.html" title="MCP 是什么？怎么实现的？">MCP 是什么？怎么实现的？</a><time datetime="2025-08-31T10:09:00.000Z" title="发表于 2025-08-31 18:09:00">2025-08-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/afe1af1b.html" title="给一个网络结构，如何计算模型的参数量"><img src="/images/model_parameters.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="给一个网络结构，如何计算模型的参数量"/></a><div class="content"><a class="title" href="/p/afe1af1b.html" title="给一个网络结构，如何计算模型的参数量">给一个网络结构，如何计算模型的参数量</a><time datetime="2025-08-31T09:22:39.000Z" title="发表于 2025-08-31 17:22:39">2025-08-31</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-flex"><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">LLMs</div><div class="footer-flex-content"><a href="https://docs.pytorch.org/tutorials/" target="_blank" title="- pytorch">- pytorch</a><a href="https://huggingface.co/" target="_blank" title="- Hugging Face">- Hugging Face</a><a href="https://modelscope.cn/home" target="_blank" title="- ModelScope">- ModelScope</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">扩展</div><div class="footer-flex-content"><a href="/Gallery/" target="_blank" title="- 图库">- 图库</a><a href="/messageboard/" target="_blank" title="- 留言板">- 留言板</a><a href="/link/" target="_blank" title="- 友链">- 友链</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">框架</div><div class="footer-flex-content"><a href="https://hexo.io/zh-cn/" target="_blank" title="- Hexo">- Hexo</a><a href="https://butterfly.js.org/" target="_blank" title="- Butterfly">- Butterfly</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">更多</div><div class="footer-flex-content"><div><img src='/img/avatar.png' alt='JerryC' width='100px' height='100px'></div></div></div></div></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By DouDou.Ybqu</span><span class="framework-info"><span class="footer-separator">|</span><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.4.3</a></span></div><div class="footer_custom_text"><a href="icp链接"><img class="icp-icon" src="icp图片"><span>京ICP备-xxxxxxx号</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const applyThemeDefaultsConfig = theme => {
+    if (theme === 'dark-mode') {
+      Chart.defaults.color = "rgba(255, 255, 255, 0.8)"
+      Chart.defaults.borderColor = "rgba(255, 255, 255, 0.2)"
+      Chart.defaults.scale.ticks.backdropColor = "transparent"
+    } else {
+      Chart.defaults.color = "rgba(0, 0, 0, 0.8)"
+      Chart.defaults.borderColor = "rgba(0, 0, 0, 0.1)"
+      Chart.defaults.scale.ticks.backdropColor = "transparent"
+    }
+  }
+
+  // Recursively traverse the config object and automatically apply theme-specific color schemes
+  const applyThemeConfig = (obj, theme) => {
+    if (typeof obj !== 'object' || obj === null) return
+
+    Object.keys(obj).forEach(key => {
+      const value = obj[key]
+      // If the property is an object and has theme-specific options, apply them
+      if (typeof value === 'object' && value !== null) {
+        if (value[theme]) {
+          obj[key] = value[theme] // Apply the value for the current theme
+        } else {
+          // Recursively process child objects
+          applyThemeConfig(value, theme)
+        }
+      }
+    })
+  }
+
+  const runChartJS = ele => {
+    window.loadChartJS = true
+
+    Array.from(ele).forEach((item, index) => {
+      const chartSrc = item.firstElementChild
+      const chartID = item.getAttribute('data-chartjs-id') || ('chartjs-' + index) // Use custom ID or default ID
+      const width = item.getAttribute('data-width')
+      const existingCanvas = document.getElementById(chartID)
+
+      // If a canvas already exists, remove it to avoid rendering duplicates
+      if (existingCanvas) {
+          existingCanvas.parentNode.remove()
+      }
+
+      const chartDefinition = chartSrc.textContent
+      const canvas = document.createElement('canvas')
+      canvas.id = chartID
+
+      const div = document.createElement('div')
+      div.className = 'chartjs-wrap'
+
+      if (width) {
+        div.style.width = width
+      }
+
+      div.appendChild(canvas)
+      chartSrc.insertAdjacentElement('afterend', div)
+
+      const ctx = document.getElementById(chartID).getContext('2d')
+
+      const config = JSON.parse(chartDefinition)
+
+      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark-mode' : 'light-mode'
+
+      // Set default styles (initial setup)
+      applyThemeDefaultsConfig(theme)
+
+      // Automatically traverse the config and apply dual-mode color schemes
+      applyThemeConfig(config, theme)
+
+      new Chart(ctx, config)
+    })
+  }
+
+  const loadChartJS = () => {
+    const chartJSEle = document.querySelectorAll('#article-container .chartjs-container')
+    if (chartJSEle.length === 0) return
+
+    window.loadChartJS ? runChartJS(chartJSEle) : btf.getScript('https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js').then(() => runChartJS(chartJSEle))
+  }
+
+  // Listen for theme change events
+  btf.addGlobalFn('themeChange', loadChartJS, 'chartjs')
+  btf.addGlobalFn('encrypt', loadChartJS, 'chartjs')
+
+  window.pjax ? loadChartJS() : document.addEventListener('DOMContentLoaded', loadChartJS)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-mapping":"url","data-category":"Announcements","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'ybqu/giscus',
+      'data-repo-id': 'R_kgDOPm8Q3A',
+      'data-category-id': 'DIC_kwDOPm8Q3M4CuxXc',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="false"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
