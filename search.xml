@@ -1,6 +1,455 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Transformers 的 LayerNorm 可以并行么？</title>
+    <url>/p/b0f36060.html</url>
+    <content><![CDATA[<p><span class="math display">\[\sigma^2 = \frac{1}{N} \sum_{i=1}^N
+(x_i)^2 - \mu^2\]</span></p>
+<blockquote>
+<p>并行的时候，一边算平方和，一边算全部的和。最后平方和与均值都可以算出来，然后按公式一减就出来了<br>
+!
+但是受限于计算机计算精度的问题，这个公式当两个平方项都很大时，精度会失真，导致算出来的方差很不稳定，甚至有可能是负数</p>
+</blockquote>
+<p>Transfromers 无论是在 pytorch，还是在
+apex，还是在其他一些加速框架比如 oneflow 中，都采用了Welford online
+Algorithm。这个算法是 Welford 在 1962 年发表的<a href="https://dacemirror.sci-hub.st/journal-article/5acdb3bfff775e64387580383e2f7d4c/welford1962.pdf">《Note
+on a Method for Calculating Corrected Sums of Squares and
+Products》</a>中提出。他给出的算法，可以在一个集合新增一个元素的
+时候，均值和方差的不需要把所有的数都遍历一遍，而是根据之前集合的均值和方差就可以直接计算出来</p>
+<p>而在 1972 年，Chan 发表了<a href="http://i.stanford.edu/pub/cstr/reports/cs/tr/79/773/CS-TR-79-773.pdf">《Updating
+Formulae and a Pairwise Algorithm for Computing Sample
+Variances》</a>，可以认为是 Welford Algorithm
+的一个升级版本，可以根据两个集合的均值和方差直接
+计算出整体的均值和方差。当然如果两个集合中，某一个集合只有一个元素，算法就退化成
+Welford Algorithm
+了。这个算法为大规模并行计算均值和方差提供了理论基础</p>
+<p>由于 Welford’s Algorithm 是 Chan’s Algorithm
+的一个特例，所以下面简单说一下 Chan’s Algorithm</p>
+<div align="center">
+    <img src="/p/b0f36060/Chans_Algorithm.png" style="width: 70%;">
+</div>
+
+<h2 id="代码">代码</h2>
+<p>由于 Chan 和 Welford 算法的并行体质，Nvidia 的 Apex
+库率先实现了这个方法，叫做 Fused LayerNorm。</p>
+<p>为啥叫 Fused？因为把所有的计算都融合 (fuse) 到一个核函数里了,
+不需要与 CPU 来回通信。</p>
+<p>可以重点看代码开头的 cuWelfordOnlineSum 和 cuChanOnlineSum
+两个函数。对应 python 代码入口为
+apex.normalization.fused_layer_norm.FusedLayerNorm</p>
+<blockquote>
+<p>代码：https://github.com/NVIDIA/apex/blob/c3fad1ad120b23055f6630da0b029c8b626db78f/csrc/layer_norm_cuda_kernel.cu#L670</p>
+</blockquote>
+<p>pytorch 后来也实现实现了，可以看 cuWelfordOnlineSum 和
+cuWelfordCombine 两个函数</p>
+<blockquote>
+<p>代码：https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/native/cuda/layer_norm_kernel.cu</p>
+</blockquote>
+<p>Oneflow 后来又进一步根据输入的大小优化了 Fused Layer Norm 的性能</p>
+<blockquote>
+<p>代码：https://github.com/Oneflow-Inc/oneflow/blob/master/oneflow/core/cuda/layer_norm.cuh</p>
+</blockquote>
+<p>所以现在我们使用 pytorch 和其他加速库的 layernorm
+函数底层已经实现了并行。我们这些调包侠在用 python
+写代码的时候，要记住，哪有什么岁月静好，都是 C++ 和 Cuda
+大佬们在负重前行。</p>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>模型训练</category>
+        <category>Transformers</category>
+        <category>Normalization</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
+        <tag>Normalization</tag>
+        <tag>模型并行</tag>
+        <tag>面试刷题</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PreNorm和PostNorm各自的优缺点</title>
+    <url>/p/29c28a13.html</url>
+    <content><![CDATA[<blockquote>
+<p>目前并没有特别好的理论来解释清楚</p>
+</blockquote>
+<p>按时间顺序来梳理一下关于 Pre-Norm 和 Post-Norm 的研究。PreNorm 和
+PostNorm 的区别在于 Layer Norm 和 Residual connections
+组合方式的不同。</p>
+<p>在原始的 Transformers 论文<a href="https://arxiv.org/pdf/1706.03762">《Attention is All your
+Need》</a>中，使用的是 PostNorm</p>
+<div align="center">
+    <img src="/p/29c28a13/transformers_norm.png" style="width: 40%;">
+</div>
+
+<p>PostNorm 用公式可以表示为： <span class="math display">\[Y = Norm(X +
+Attention(X))\]</span> <span class="math display">\[Output = Norm(Y +
+FNN(Y))\]</span></p>
+<blockquote>
+<p>每一层的输入先与 Attention 相加，然后才计算 Layer
+Norm。早期的很多模型都用的是 PostNorm，比如著名的
+<code>Bert</code><br>
+PostNorm 的设计(把 Normalization
+放在一个模块的最后，下一个模块接收到的总是归一化后的结果)是比较符合
+Normalization 的初衷，就是为了<strong>降低梯度的方差</strong><br>
+但是层层堆叠起来，从上图可以看出，深度学习的基建 ResNet
+的结构其实被破坏了</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">这就导致大家在训练 Transformers 的时候，发现并不是那么容易的训练，learning rate warmup, 初始化等各种招都用上，训练的时候还得小心翼翼</span><br></pre></td></tr></table></figure>
+
+<hr>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/1910.05895">Transformers without
+Tears: Improving the Normalization of Self-Attention, 2019</a></p>
+</blockquote>
+<p>文章讨论了 ResNet 中 Identity mappings 的重要性，并且以此为基础提出了
+PreNorm</p>
+<p>假设输入 X、Attention(X)、FNN(X) 的均值为0，方差都为1，且相互独立
+<img src="/p/29c28a13/Improving_the_Normalization_of_Self-Attention.png"></p>
+<p>这个式子的第一项会随着层数递减，而且是指数的变小。如果层数较低还好，如果像是现在的大模型一样堆叠32层，那几乎和0没什么区别了，<strong>也就丧失了
+ResNet 的意义</strong></p>
+<p>PostNorm 就像在何凯明修的高速公路上，每一层都加了一个收费站。没了
+ResNet 的架构，就导致 Transforemrs
+在训练的时候，需要小心翼翼。都要加一个learning rate warmup
+的过程，先让模型在小学习率上适应一段时间，然后再正常训练</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">warmup 的过程虽然在 Transformers 的论文里就提了一嘴，但是真正训练的时候会发现真的很重要</span><br></pre></td></tr></table></figure>
+
+<p>然后这篇文章将 Layer Norm 的位置改了一下，变成了 PreNorm。所谓的 Pre
+和 Post 指的是 Norm 在 Attention/FFN 之前还是之后。 <span class="math display">\[Y = X + Attention(Norm(X))\]</span> <span class="math display">\[Output = Y + FNN(Norm(Y))\]</span></p>
+<div align="center">
+    <img src="/p/29c28a13/prenorm_postnorm.png" style="width: 70%;">
+</div>
+
+<p>从实验结果发现，PreNorm 基本上可以不用 warmup</p>
+<hr>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/2002.04745">On Layer Normalization in
+the Transformer Architecture, 2020</a></p>
+</blockquote>
+<p>作者先通过实验证明了对于 PostNorm 来说，Lr warmup 是必须的 <img src="/p/29c28a13/On_Layer_Normalization_in_the_Transformer_Architecture.png"></p>
+<p>上图可以看出</p>
+<ul>
+<li>没有 warmup 效果很差，没有 warmup BLEU 只能到8，加上了可以到 34</li>
+<li>即使加了 warmup，对warmup 参数的设置也很敏感，比如 warmup step 在500
+步时，不同的lrmax 的 BLEU 一个31，一个还不到3</li>
+</ul>
+<p>这就导致了大量的调参工作，还有warmup 阶段也拖延了训练速度</p>
+<p>同时论文也证明了，<strong>随着层数的增大，Post-Norm
+期望的梯度会随着层数的变大而变大，而 PreNorm 则几乎保持不变</strong>
+<img src="/p/29c28a13/On_Layer_Normalization_in_the_Transformer_Architecture_Gradient.png"></p>
+<p>所以当层数深的时候，大的梯度加上大的学习率训练很容易就崩盘了，也是刚开始得
+warmup 一下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">总结来看，PreNorm 的训练更快，且更加稳定，所以之后的模型架构大多都是 PreNorm 了，比如 GPT，MPT，Falcon，llama 等</span><br></pre></td></tr></table></figure>
+
+<hr>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/2004.08249">Understanding the
+difficulty of training transformers, 2020</a></p>
+</blockquote>
+<p>论文指出 PreNorm 也并不是都是好的，PreNorm 有潜在的（表示塌陷）
+representation collapse
+问题，具体来说就是<strong>靠近输出位置的层会变得非常相似，从而对模型的贡献会变小</strong></p>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/2304.14802">ResiDual: Transformer with
+Dual Residual Connections, 2023</a></p>
+</blockquote>
+<p>论文尝试融合 PreNorm 和 PostNorm 的优点</p>
+<div align="center">
+    <img src="/p/29c28a13/Transformer_with_Dual_Residual_Connections.png" style="width: 70%;">
+</div>
+
+<p>这也表明 PostNorm 虽然不好训练，但是潜力似乎比 PreNorm 要好</p>
+<blockquote>
+<p>论文中提到的在 LayerNorm 的时候，调整 x 和 f(x) 的比重，其思路被
+DeepNorm 借鉴。只不过这里是可学习的权重，而 DeepNorm 则是超参数</p>
+</blockquote>
+<blockquote>
+<p><a href="https://proceedings.mlr.press/v139/davis21a/davis21a.pdf">Catformer:
+Designing stable transformers via sensitivity analysis, 2021</a></p>
+</blockquote>
+<p>论文给出了不同 skip connect 的梯度方差和敏感性的指标 <img src="/p/29c28a13/Designing_Stable_Transformers_via_Sensitivity_Analysis.png"></p>
+<p>从图中也可以看出，相比于 PostNorm，PreNorm 对层数更加不敏感</p>
+<hr>
+<h2 id="总结">总结：</h2>
+<ol type="1">
+<li>PreNorm
+在训练稳定和收敛性方面有明显的优势，所以大模型时代基本都无脑使用 PreNorm
+了。但是其可能有潜在的（表示塌陷） representation collapse
+问题，也就是上限可能不如 PostNorm</li>
+<li>PostNorm
+则对训练不稳定，梯度容易爆炸，学习率敏感，初始化权重敏感，收敛困难。好处是有潜在效果上的优势，到底有没有呢？也不好说，因为现在大模型训练太费钱了，PostNorm
+在效果上带来的提升很可能不如多扔点数据让 PreNorm 更快的训练出来</li>
+</ol>
+<hr>
+<p><a href="https://www.zhihu.com/question/519668254/answer/2371885202">@唐翔昊</a><br>
+<strong>pre-norm</strong>:<br>
+<span class="math inline">\(x_{n+1}=x_n+f(norm(x_n))\)</span>
+其中第二项的方差由于有 norm 是不随层数变化的，于是 x
+的方差会在主干上随层数积累。到了深层以后，单层对主干的影响可以视为小量，而不同层的
+f 统计上是相似的，于是有</p>
+<p><span class="math display">\[x_{n+2}=x_{n+1}+f(norm(x_{n+1}))=x_n+f(norm(x_n))+f(norm(x_{n+1}))\approx
+x_n+2f(norm(x_n))\]</span></p>
+<p>这样训练出来的深层 ResNet or
+Transformer，深层部分实际上更像扩展了模型宽度，所以相对好训练，但某种意义上并不是真正的
+deep</p>
+<p><strong>post-norm</strong>:<br>
+<span class="math inline">\(x_{n+1}=norm(x_n+f(x_n))\)</span>
+则保证了主干方差恒定，每层对 x
+都可能有较大影响，代价则是模型结构中没有从头到尾的恒等路径，梯度难以控制。通常认为会更难收敛，但训练出来的效果更好。</p>
+<p><a href="https://arxiv.org/pdf/2203.00555">DeepNet: Scaling
+Transformers to 1,000 Layers </a> 中提出的 <code>deep-norm</code> <span class="math inline">\(x_{n+1}=norm(\alpha
+x_n+f(x_n))(\alpha&gt;1)\)</span> 通过控制参数起到了一个折中的效果</p>
+<hr>
+<p><a href="https://kexue.fm/archives/9009">苏剑林 ｜
+为什么PreNorm的效果不如PostNorm？</a></p>
+<hr>
+<h2 id="扩展问题">扩展问题</h2>
+<ol type="1">
+<li>pre-norm 和 post-norm 对学习率的影响</li>
+<li>大模型目前哪些使用了 pre-norm, 哪些使用了 post-norm， 举例说明</li>
+<li>一些研究提出了混合使用Pre-Norm和Post-Norm的方法。是否有了解？它们的优势是什么？</li>
+</ol>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>模型训练</category>
+        <category>Transformers</category>
+        <category>Normalization</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
+        <tag>Normalization</tag>
+        <tag>面试刷题</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Transformers为什么使用LayerNorm</title>
+    <url>/p/871b9faf.html</url>
+    <content><![CDATA[<blockquote>
+<p>Transformers 中为什么使用 LayerNorm 而不是其他的？比如 BatchNorm?</p>
+</blockquote>
+<h2 id="为什么使用-layernorm">为什么使用 LayerNorm</h2>
+<p>不仅仅是使用 LayerNorm，各种 Normalize 的操作，目的都是：</p>
+<ul>
+<li><p><strong>为了保证训练的稳定性</strong>：因为当神经网络很深的时候，反向传播的参数计算往往都是指数级的变化，太大或者太小的数值送入激活函数后就容易造成梯度消失或者梯度爆炸，训练就挂了</p></li>
+<li><p><strong>加速模型的收敛</strong>：模型的每一层都在拟合一个数据分布，而如果不进行normalize，那么每次的输入分布可能随时都在变化，这样学习起来就很困难。在
+normalize
+之后，绝大部分数值都集中在了一个可接受的范围内，每一层的参数就拟合这个分布就好了，这个范围正好又是激活函数的“舒适区”，所以模型收敛速度会更快</p></li>
+<li><p><strong>让模型的训练不再那么依赖权重的初始化</strong>：早期的时候初始化对模型结果的影响还是蛮大的，也是个很火热的研究方向。就包括现在也有很多研究，比如
+<a href="https://arxiv.org/pdf/2109.08203">torch.manual_seed(3407) is
+all you need</a></p></li>
+</ul>
+<h2 id="为什么不用-batchnorm">为什么不用 BatchNorm</h2>
+<p>其实在 Transformers 论文刚出的那个时间点，就是两种 Normalize
+比较流行，早一点提出的是 BatchNorm, 后来是 LayerNorm, 至于再后来的
+Instance Norm 和 Group Norm 等都可以认为是这两种基础上的扩展</p>
+<p><img src="/p/871b9faf/Normalization图示.png"></p>
+<p><strong>当时 BatchNorm 在 CV 领域比较流行，而 NLP 则使用 LayerNorm
+比较多</strong>。但也并不是一定要按照任务这么划分</p>
+<p>当时为什么 CV 都使用 BatchNorm 呢？我个人觉得是因为站在 CNN
+卷积核的计算方式上看，在 Batch 上进行 Normalize
+是比较契合的，因为这样每个卷积核在计算的时候数据的 Normalize
+的方式是一样的。</p>
+<p>但是 BatchNorm 也有些问题，下面会简单说几点：</p>
+<ul>
+<li><p><strong>需要大Batch，小Batch训练不稳定</strong>：BatchNorm
+需要跨样本的 Normalize，所以采样要足够大才能捕捉到样本的分布</p></li>
+<li><p><strong>加大 Batch
+有一些副作用</strong>：一个最明显的问题，那就是现在模型越来越大，如果想实现多机多卡的
+GPU 并行，那 BatchNorm 需要额外的通信，因为一个 Batch
+很可能分布在不同的机器上，而Normalize又需要计算整个样本的数据分布才行。现在大概有两种解法</p>
+<blockquote>
+<ol type="a">
+<li>一种是类似 mini batch，放弃跨机器通信</li>
+<li>一种是 Pytorch 实现的
+SyncBatchNorm，在前面的基础上尽量减少通信的数据<br>
+但是不管怎么样，额外的通信开销在模型足够大的时候也是个问题</li>
+</ol>
+</blockquote></li>
+<li><p><strong>训练和预测的不一致性</strong>：训练的时候有大批的数据可以组成
+Batch，但是预测的时候，如果只想预测一个样本，那 BatchNorm
+就废了。所以在预测的时候实际上是采用了训练时候的数据分布来进行 Normalize
+的。这样就必须要保证训练和预测的分布必须一致，泛化能力没那么强</p></li>
+<li><p>并不适合当时的 NLP 主流框架比如 RNN（why??）</p></li>
+<li><p><strong>并不太适合长度不固定的 NLP 序列</strong>：因为每个 Batch
+最后总有些 pad，这些 pad 会干扰 BatchNorm 的数据分布。如果把 pad
+都不参与计算，那就相当于 batch 越来越小</p></li>
+<li><p>还有就是现在多模态的输入，也不太适合 BatchNorm（why??）</p></li>
+<li><p>Batch 内的信息泄漏等问题：<a href="https://arxiv.org/pdf/2105.07576">《Rethinking “Batch” in
+BatchNorm》</a></p></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">所以说 LayerNorm 改成了按特征来 Normalize，可以很好的处理小 Batch 和变长输入的问题，也没有额外的通信，可以说基本解决了上面的问题。所以后来 LayerNorm 越来越流行，BatchNorm 反而不太用了，尤其是大模型时代一直在追求更高的训练效率，BatchNorm 的额外通信就有些不合时宜了</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">当然现在大模型也有其他的 Normalize 方法，比如 RMSNorm、DeepNorm 等</span><br></pre></td></tr></table></figure>
+
+<h2 id="实验论证">实验论证</h2>
+<h3 id="1-transformers-使用-batchnorm-效果并不太好">1. Transformers 使用
+BatchNorm 效果并不太好</h3>
+<p><a href="https://arxiv.org/pdf/2003.07845">《PowerNorm: Rethinking
+BatchNormalization in Transformers》</a></p>
+<p>论文测试了把 Transformers 中的 LayerNorm 变成了 BatchNorm。作者发现
+Transformers 中的 LayerNorm 换成 BatchNorm
+后，在分类和机器翻译的任务上性能下降明显。如下图</p>
+<div align="center">
+    <img src="/p/871b9faf/PowerNorm.png" style="width: 50%;">
+</div>
+
+<p>可以看出，BatchNorm 效果并不太好。具体原因作者指出采用 BatchNorm 的
+Transformers，其 BatchNorm
+的均值和方差震荡明显，并不稳定，所以收敛的就很慢</p>
+<blockquote>
+<p>TODO: 作者对 BN 进行了改进，提出了 PowerNorm</p>
+</blockquote>
+<h3 id="2layernorm-会改善-transformers-的注意力">2.：LayerNorm 会改善
+Transformers 的注意力</h3>
+<p><a href="https://arxiv.org/pdf/2305.02582">《On the Expressivity Role
+of LayerNorm in Transformers’ Attention》</a></p>
+<p>这篇论文在较小的 Transformers 模型上做了实验，发现 LayerNorm 为
+Attention 提供了两个功能</p>
+<ul>
+<li>Projection：会将输入投影到 query 和 key 正交的超平面，这样方便所有的
+key 可以同等访问</li>
+<li>Scaling：每一个 Key 都能被选中，都有机会获得最高分</li>
+</ul>
+<p><img src="/p/871b9faf/On_the_Expressivity_Role_of_LayerNorm_in_Transformers_Attention.png"></p>
+<p>LayerNorm 的存在可以让 Attention
+不用自己去学习这两点。但是随着模型规模的增大，这个辅助作用是被削弱的，也就是模型能自己学会这两点。但是仍旧从一个比较有意思的角度阐述了
+LayerNorm 的作用</p>
+<h3 id="3-layernorm-在图像中表现怎么样">3. LayerNorm
+在图像中表现怎么样？</h3>
+<p><a href="https://arxiv.org/pdf/1803.08494">《Group
+Normalization》，何凯明</a></p>
+<p>论文对 ResNet 中使用不同的 Normalize 方式进行了对比，可以看出
+LayerNorm 是不如 BatchNorm 的 <img src="/p/871b9faf/GroupNormalization.png"></p>
+<ul>
+<li>在 Transformers 大火后，CV 领域也开始使用 Transformers，Vit
+中使用的就是 LayerNorm</li>
+<li><a href="https://arxiv.org/pdf/2201.03545">《A ConvNet for the
+2020s》，何凯明</a>论文里表示，在借鉴了一些 Vision Transformers 的思想对
+ConvNet 修改后，使用 LayerNorm 效果比BatchNorm 还要好一点</li>
+</ul>
+<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+<ul>
+<li><a href="https://kyleluther.github.io/2020/02/18/batchnorm-exploding-gradients.html">Why
+Batch Norm Causes Exploding Gradients</a></li>
+<li><a href="https://arxiv.org/abs/1805.11604">How Does
+BatchNormalization Help Optimization?</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>模型训练</category>
+        <category>Transformers</category>
+        <category>Normalization</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
+        <tag>Normalization</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Transformers常用的Normalization都有什么</title>
+    <url>/p/28075505.html</url>
+    <content><![CDATA[<p>目前流行的就两种：<strong>LayerNorm</strong> 和
+<strong>RMSNorm</strong>。早期的 GLM 系列曾经用过 DeepNorm，后来在
+ChatGLM2 的时候就改成 LayerNorm 或者 RMSNorm</p>
+<blockquote>
+<p>根据 Norm 的位置可以进一步分为 Pre-LayerNorm, Post-LayerNorm,
+Pre-RMSNorm, Post-RMSNorm</p>
+</blockquote>
+<h2 id="layernorm">LayerNorm</h2>
+<p>其实目前主流的 Normalization 都有个通用的公式 <span class="math display">\[Norm(x) = \frac{x-\mu}{\sigma}\gamma +
+\beta\]</span> 其中，<span class="math inline">\(\mu\)</span>
+为均值，<span class="math inline">\(\sigma\)</span>
+为归一化的分母，比如对 LayerNorm 来说他是<strong>标准差</strong>，对
+WeightNorm 来说是 <strong>L2范数</strong>。<span class="math inline">\(\gamma\)</span> 和 <span class="math inline">\(\beta\)</span> 为可学习的参数，可以让模型根据分布
+scaling 和 shifting。有的文献把 <span class="math inline">\(\gamma\)</span> 叫做 gain, 把 <span class="math inline">\(\beta\)</span> 叫做 bias</p>
+<p>对于 Layer Norm 来说，可以表示为： <span class="math display">\[LayerNorm(x) = \frac{x-\mu}{\sigma}\gamma +
+\beta\]</span> 上面公式中，<span class="math inline">\(\mu\)</span>
+为均值，<span class="math inline">\(\sigma\)</span> 为标准差 <span class="math display">\[\mu = \frac{1}{N}\sum_{i=1}^{N}x_i\]</span> <span class="math display">\[\sigma =
+\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-\mu)^2 + \epsilon}\]</span></p>
+<blockquote>
+<p>Batch Norm 也可以表示成上面的样子，只不过的计算的维度不同</p>
+</blockquote>
+<p>Layer Norm 出来以后，大家发现 Layer Norm
+效果很好，同时也想方设法去改进。在论文<a href="https://arxiv.org/pdf/1911.07013">《Understandingand Improving
+Layer Normalization》</a>中，作者仔细研究了 Layer Norm
+公式的各个部分</p>
+<p>作者做了一些实验，证明了两点：</p>
+<ul>
+<li><strong><span class="math inline">\(\gamma\)</span> 和 <span class="math inline">\(\beta\)</span>
+是数据无关的参数</strong>，如果训练和测试的分布不太一样，那就会导致
+overfitting。所以作者尝试去掉 γ 和
+β，然后发现效果并没有变差，反而有的会更好<br>
+<img src="../images/Understanding_and_Improving_Layer_Normalization.png"></li>
+</ul>
+<ol start="2" type="a">
+<li><span class="math inline">\(\mu\)</span> 和 <span class="math inline">\(\sigma\)</span>
+又有什么用呢？作者通过理论和实验证明了通过减去<span class="math inline">\(\mu\)</span>，让梯度回到0附近。而除以<span class="math inline">\(\sigma\)</span>则让梯度的方差变小。所以 Layer Norm
+提升了训练的稳定性。</li>
+</ol>
+<blockquote>
+<p>作者还提出了把 <span class="math inline">\(\gamma\)</span> 和 <span class="math inline">\(\beta\)</span>
+变成了可对输入微分的函数，然后把这个方法叫
+<strong>AdaNorm</strong>。效果也很好，不过这么做让计算变得复杂了。</p>
+</blockquote>
+<h2 id="rmsnorm">RMSNorm</h2>
+<blockquote>
+<p>上面的 AdaNorm 尝试做了减法，但是又做了加法，RMSNorm
+则在做减法上一条路走到黑</p>
+</blockquote>
+<!-- RMSNorm 的作者认为，让数据和梯度变成 0 是否是必要的？作者把 LayerNorm 中的 $\mu$ 和 $\beta$ 去掉 (也可以认为是这两个值变为 0)，就得到了 RMSNorm -->
+
+<p>RMSNorm（Root Mean Square Layer Normalization）论文假设 LayerNorm
+中的重新中心化不再是必须的（平移不变性不重要），并提出了一种新的归一化方法：均方根层归一化（RMSNorm）。RMSNorm
+通过均方根（RMS）对每一层神经元的输入进行归一化，使模型具备重新缩放不变性和隐式学习率调整的能力。相比
+LayerNorm，RMSNorm 计算更为简洁，大约可以节省 7% 到 64% 的运算。</p>
+<p><span class="math display">\[RMSNorm(\mathrm{x}) =
+\frac{x}{RMS(\mathrm{x})}\gamma\]</span> <span class="math display">\[RMS(\mathrm{x}) = \sqrt{\frac{1}{N}
+\sum_{i=1}^{N} x_i^2 + \epsilon}\]</span>
+通过实验证明了这样做效果不仅没有下降，计算效率还提升了 25% <img src="../images/RMSNorm.png"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">RMSNorm</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;nlp 领域&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, dim</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        :param dim: 输入的维度</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="built_in">super</span>(RMSNorm, <span class="variable language_">self</span>).__init__()</span><br><span class="line">        <span class="variable language_">self</span>.scale = nn.Parameter(torch.ones(dim))  <span class="comment"># 可学习的缩放参数</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="comment"># x 的形状为 [batch_size, seq_len, dim]</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 计算均方根 (RMS) shape is [2, 4, 1]</span></span><br><span class="line">        rms = torch.sqrt(torch.mean(x ** <span class="number">2</span>, dim=-<span class="number">1</span>, keepdim=<span class="literal">True</span>))</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 归一化，并应用缩放参数</span></span><br><span class="line">        <span class="keyword">return</span> x / rms * <span class="variable language_">self</span>.scale</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="还能在优化么">还能在优化么？</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">优化的方向其实也比较明确：</span><br><span class="line">1. 计算更快</span><br><span class="line">2. 能让梯度的方差变小</span><br></pre></td></tr></table></figure>
+
+<p>看上面的公式，似乎能优化的也不多，要么把 <span class="math inline">\(\gamma\)</span> 去掉，要么再修改 <span class="math inline">\(\sigma\)</span> 的计算公式，变得更简单一点</p>
+<p><strong>WeightNorm</strong></p>
+<p>和 RMSNorm 的工作其实非常像，而且更简单 <span class="math display">\[WeightNorm(x) = \frac{x}{||x||_2}\gamma\]</span>
+<span class="math display">\[||x||_2 = \sqrt{\sum_{i=1}^{N} x_i^2 +
+\epsilon}\]</span></p>
+<p>对比一下可以发现，WeightNorm 和 RMSNorm 就差了一个 <span class="math inline">\(\sqrt{N}\)</span>，但是从上图的效果对比来看，也就是
+L2-Norm 那根线，效果和 RMSNorm
+还是差不少的。这大概率是因为变长序列带来的影响，WeightNorm
+并没有考虑长度的问题。所以去掉 <span class="math inline">\(\sqrt{N}\)</span> 这条路已经走不通了。</p>
+<blockquote>
+<p>那改变其他的归一化方式呢？比如计算更简单的 L1 norm?
+并不是那么好，因为 L1 norm 在 0 点不可导，虽然可以通过一些 trick
+避免，但是总归是不太优雅</p>
+</blockquote>
+<h2 id="大模型使用-normalization-汇总">大模型使用 Normalization
+汇总</h2>
+<div align="center">
+    <img src="/p/28075505/Normalization汇总.png" style="width: 60%;">
+</div>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>模型训练</category>
+        <category>Transformers</category>
+        <category>Normalization</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
+        <tag>Normalization</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>给一些token_id和对应的tokenizer，可以将其无损的还原为原始文本么</title>
     <url>/p/70159603.html</url>
     <content><![CDATA[<p>需要看 tokenizer 的实现算法，<strong>如果 tokenizer 是采用类似
@@ -60,14 +509,15 @@ llama 进行 post pretrain 才行。<br>
 ]]></content>
       <categories>
         <category>LLMs</category>
+        <category>模型训练</category>
         <category>Transformers</category>
         <category>Tokenization</category>
       </categories>
       <tags>
         <tag>LLMs</tag>
         <tag>Transformers</tag>
-        <tag>Tokenization</tag>
         <tag>面试刷题</tag>
+        <tag>Tokenization</tag>
       </tags>
   </entry>
   <entry>
@@ -133,14 +583,15 @@ tokenizer tutorial</a></p>
 ]]></content>
       <categories>
         <category>LLMs</category>
+        <category>模型训练</category>
         <category>Transformers</category>
         <category>Tokenization</category>
       </categories>
       <tags>
         <tag>LLMs</tag>
         <tag>Transformers</tag>
-        <tag>Tokenization</tag>
         <tag>面试刷题</tag>
+        <tag>Tokenization</tag>
       </tags>
   </entry>
   <entry>
@@ -240,15 +691,220 @@ Multiplication Background User’s Guide</a></p>
 ]]></content>
       <categories>
         <category>LLMs</category>
+        <category>模型训练</category>
         <category>Transformers</category>
         <category>Tokenization</category>
       </categories>
       <tags>
         <tag>LLMs</tag>
         <tag>Transformers</tag>
+        <tag>面试刷题</tag>
         <tag>Tokenization</tag>
         <tag>Vocab Size</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Tokenization是什么</title>
+    <url>/p/635901b3.html</url>
+    <content><![CDATA[<p>对于机器学习或者深度学习的模型，都需要将文本转换为数字序列作为输入，通常需要一个合适的词表。Tokenization是将文本切分成词典中的词，从而得到用词典的index表示的数字序列。</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">Tokenization的难点</span><br><span class="line"></span><br><span class="line"><span class="number">1.</span> 切分的粒度</span><br><span class="line">    - State-of-the-art 是一个词？还是切分成<span class="number">4</span>个？</span><br><span class="line">    - 清华大学 是作为一个词，还是“清华” + “大学”，甚至是“清” +“华” +“大” +“学”</span><br><span class="line"><span class="number">2.</span> 切分导致的歧义</span><br><span class="line">    - 南京市/长江/大桥</span><br><span class="line">    - 南京/市长/江大桥</span><br><span class="line">    - 广州市/长隆/马戏/欢迎您</span><br><span class="line">    - 广州/市长/隆马戏/欢迎您</span><br><span class="line"><span class="number">3.</span> 数字怎么处理</span><br><span class="line">    - <span class="number">20</span>/<span class="number">07</span>/<span class="number">2024</span></span><br><span class="line">    - <span class="number">1388888888</span></span><br><span class="line"><span class="number">4.</span> 不同语言的特性</span><br><span class="line">    - 拉丁语系可以用空格来区分，但是中文和日文没有空格</span><br><span class="line">    - 波斯语和阿拉伯语从右往左写，而且有些能连写。</span><br></pre></td></tr></table></figure>
+
+<h1 id="tokenization的发展">Tokenization的发展</h1>
+<blockquote>
+<p>大概有三个阶段：词粒度、字粒度和 Subword 粒度</p>
+</blockquote>
+<h2 id="a-词粒度-word-based">A. 词粒度 Word-based</h2>
+<p>每一个token是词典中的一个词</p>
+<ul>
+<li>对于拉丁语系很简单，按照空格和标点符号分割即可</li>
+<li>对于中文日文，则需要专门进行分词，比如中文分词一般都用jieba，哈工大的LTP等</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">中文的分词可以抽象为一个序列标注问题，所以这些分词方法会使用词典索引，或者HMM，双向GRU等模型来进行分词。虽然BERT甚至大模型也能很好的完成这个任务，但是由于分词是一个非常频繁的操作，效率也很重要，所以一般不会使用太复杂的模型来做。</span><br></pre></td></tr></table></figure>
+
+<p>优点：</p>
+<ul>
+<li>符合人类的直觉，词的含义完备</li>
+<li>对于英文来说实现很简单</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>如何构造一份好的词典，以及词典过大的问题</li>
+<li>OOV（Out of
+Vocabulary）问题，对于词典中没有词一般会分配一个统一来处理，信息丢失</li>
+<li>同义词和误拼会被认为是不同的词。比如do
+not和don’t虽然含义一样，但是最终的id不一样。类似的还有词的不同形态，比如have,
+has, had, having等</li>
+<li>词典中的词没有任何关联，低频词不会得到充分的训练。比如oarfish，这个词虽然第一眼可能不知道什么意思，但是能猜出是一种鱼（皇带鱼）</li>
+</ul>
+<h2 id="b-字粒度-character-based">B. 字粒度 Character-based</h2>
+<p>把文本按照最小粒度来拆分</p>
+<ul>
+<li>对于英文来说就是26个字母加上一些标点符号</li>
+<li>中文来说就是字</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>实现简单</li>
+<li>词典很小</li>
+<li>几乎没有OOV（Out of Vocabulary）问题</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>对于英文来说，单个字母几乎没有含义</li>
+<li>难以学习到词汇的真正含义。由于中文的一个字还是有一定的含义，所以在中文勉强可以使用，但是英文几乎没法使用</li>
+<li>会让输入变得很长，训练和推理更慢</li>
+</ul>
+<h2 id="c-子词粒度subword">C. 子词粒度：Subword</h2>
+<p>Subword Tokenization
+可以认为是上面两种方法的一个中间态。其设计理念为：</p>
+<ol type="1">
+<li>词典中的每一个token都有语义。</li>
+<li>常用的词汇尽量不要分割</li>
+<li>不常用的词汇可以拆分成常用的、有意义的字词(Subword)</li>
+</ol>
+<p>优点：</p>
+<ul>
+<li>几乎没有OOV Out of Vocabulary）问题</li>
+<li>有泛化能力。即使训练样本中未出现的词，也能通过subword来理解，因为subword能够捕获一些语言上词根的含义</li>
+<li>词典的大小可以控制</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>新技术还需要一些验证和探索</li>
+<li>对英文支持很好，但是对中文来说没有起到类似英文的Subword效果。因为中文也可以进一步拆分，比如“钅”
+一般都跟金属有关，“犭”一般都跟动物有关。目前的中文的处理粒度还没有这么细致</li>
+</ul>
+<h1 id="常用tokenize方法">常用Tokenize方法</h1>
+<h2 id="a-byte-pair-encoding-bpe">A. Byte-Pair Encoding (BPE)</h2>
+<blockquote>
+<p><a href="https://arxiv.org/abs/1508.07909">Neural Machine Translation
+of Rare Words with Subword Units</a></p>
+</blockquote>
+<h3 id="bpe">BPE</h3>
+<blockquote>
+<p>核心思想在于将最常出现的子词对合并，直到词汇表达到预定的大小时停止</p>
+</blockquote>
+<ol type="1">
+<li>准备语料<span class="math inline">\(D\)</span>，词表大小<span class="math inline">\(V\)</span></li>
+<li>使用预分词器pretokenizer来完成初步的切分（pretokenizer可以是简单基于空格的，也可以是基于规则的），比如英文拆分为26个英文字母，且每个单词的结尾处添加
+“&lt;/w&gt;“进行标识</li>
+<li>统计每个单词的频率；<strong>【到这初始化就完成了，此时的词表中全部都是单个字母】</strong></li>
+<li>统计所有2-gram的组合token，将词频最高的组合token添加到词表中</li>
+<li>检测被合并的那两个token，如果某个token在整个语料中都没有再出现过，那么就从词表中移除</li>
+<li>重复上述第4步和第5步，直到词表的数量达到预设定的大小<span class="math inline">\(V\)</span></li>
+<li>&lt;得到词表之后，将词表中所有的词按照长度进行降序排列&gt;</li>
+</ol>
+<hr>
+<p>示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">D = &#123;&#x27;low&#x27;:5,&#x27;lower&#x27;:2,&#x27;newest&#x27;:6,&#x27;widest&#x27;:3&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过1、2、3步后得到初始的词表：<br>
+语料词频：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#x27;l o w &lt;/w&gt;&#x27;: 5</span><br><span class="line">&#x27;l o w e r &lt;/w&gt;&#x27;: 2</span><br><span class="line">&#x27;n e w e s t &lt;/w&gt;&#x27;: 6</span><br><span class="line">&#x27;w i d e s t &lt;/w&gt;&#x27;: 3</span><br></pre></td></tr></table></figure>
+
+<p>词表：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&#x27;l&#x27;, &#x27;o&#x27;, &#x27;w&#x27;, &#x27;e&#x27;, &#x27;r&#x27;, &#x27;n&#x27;, &#x27;s&#x27;, &#x27;t&#x27;, &#x27;i&#x27;, &#x27;d&#x27;, &#x27;&lt;/w&gt;&#x27;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重复4、5步直到满足停止条件：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">step 1:</span><br><span class="line">- 最多的组合为 es, 出现了9次，</span><br><span class="line">- 添加token: es, 语料中已经不存在 &#x27;s&#x27; 了，从词表中去除 &#x27;s&#x27;</span><br><span class="line">---</span><br><span class="line">+ 词表：&#123;&#x27;l&#x27;, &#x27;o&#x27;, &#x27;w&#x27;, &#x27;e&#x27;, &#x27;r&#x27;, &#x27;n&#x27;, &#x27;t&#x27;, &#x27;i&#x27;, &#x27;d&#x27;, &#x27;&lt;/w&gt;&#x27;, &#x27;es&#x27;&#125;</span><br><span class="line">---</span><br><span class="line"></span><br><span class="line">step 2:</span><br><span class="line">- 最多的组合为 est, 出现了9次</span><br><span class="line">- 添加token: est, 语料中已经不存在 &#x27;es&#x27; 和 &#x27;t&#x27;了，从词表中去除 &#x27;es&#x27; 和 &#x27;t&#x27;</span><br><span class="line">---</span><br><span class="line">+ 词表：&#123;&#x27;l&#x27;, &#x27;o&#x27;, &#x27;w&#x27;, &#x27;e&#x27;, &#x27;r&#x27;, &#x27;n&#x27;, &#x27;i&#x27;, &#x27;d&#x27;, &#x27;&lt;/w&gt;&#x27;, &#x27;est&#x27;&#125;</span><br><span class="line">---</span><br><span class="line">... ...</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p><strong>编码（Encode）</strong><br>
+编码时，遍历排好序的词表，查找词表中是否有是当前单词的子字符串的子词</p>
+<ul>
+<li>如果有，那么这个子词就作为表示该单词的 token
+之一，原单词中除去该子词之后剩余的部分继续遍历排好序的词表</li>
+<li>当所有的词表都遍历完了之后，如果依然有子字符串没有匹配上词表中的任何子词，那么就使用&lt;\UNK&gt;表示该部分</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 给定输入文本</span><br><span class="line">the highest mountain</span><br><span class="line"></span><br><span class="line"># 转为单词序列</span><br><span class="line">[&quot;the&lt;/w&gt;&quot;, &quot;highest&lt;/w&gt;&quot;, &quot;mountain&lt;/w&gt;&quot;]</span><br><span class="line"></span><br><span class="line"># 假设已有排好序的词表</span><br><span class="line">[&quot;errrr&lt;/w&gt;&quot;, &quot;tain&lt;/w&gt;&quot;, &quot;moun&quot;, &quot;est&lt;/w&gt;&quot;, &quot;high&quot;, &quot;the&lt;/w&gt;&quot;, &quot;a&lt;/w&gt;&quot;]</span><br><span class="line"></span><br><span class="line"># 每个单词的编码结果</span><br><span class="line">&quot;the&lt;/w&gt;&quot; -&gt; [&quot;the&lt;/w&gt;&quot;]</span><br><span class="line">&quot;highest&lt;/w&gt;&quot; -&gt; [&quot;high&quot;, &quot;est&lt;/w&gt;&quot;]</span><br><span class="line">&quot;mountain&lt;/w&gt;&quot; -&gt; [&quot;moun&quot;, &quot;tain&lt;/w&gt;&quot;]</span><br><span class="line"></span><br><span class="line"># 输入文本编码后的token序列</span><br><span class="line">[&quot;the&lt;/w&gt;&quot;, &quot;high&quot;, &quot;est&lt;/w&gt;&quot;, &quot;moun&quot;, &quot;tain&lt;/w&gt;&quot;]</span><br></pre></td></tr></table></figure>
+
+<p><strong>解码（Decode）</strong></p>
+<ul>
+<li>如果 token 是以 &lt;/w&gt; 结尾的，说明这是一个单词的结尾</li>
+<li>如果 token 不是以 &lt;/w&gt; 结尾的，说明这个 token 需要和其后面的
+token 拼接起来构成单词</li>
+</ul>
+<blockquote>
+<p>整体来看，就等同于把 &lt;/w&gt; 替换成空格之后，直接把全部 token
+拼接成一个字符串。</p>
+</blockquote>
+<hr>
+<p>代码实现：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> defaultdict, Counter</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_stats</span>(<span class="params">vocab</span>):</span><br><span class="line">    pairs = defaultdict(<span class="built_in">int</span>)</span><br><span class="line">    <span class="keyword">for</span> word, freq <span class="keyword">in</span> vocab.items():</span><br><span class="line">        symbols = word.split()</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(symbols) - <span class="number">1</span>):</span><br><span class="line">            pairs[symbols[i], symbols[i+<span class="number">1</span>]] += freq</span><br><span class="line">    <span class="keyword">return</span> pairs</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">merge_vocab</span>(<span class="params">pair, v_in</span>):</span><br><span class="line">    v_out = &#123;&#125;</span><br><span class="line">    bigram = re.escape(<span class="string">&#x27; &#x27;</span>.join(pair))</span><br><span class="line">    p = re.<span class="built_in">compile</span>(<span class="string">r&#x27;(?&lt;!\S)&#x27;</span> + bigram + <span class="string">r&#x27;(?!\S)&#x27;</span>)</span><br><span class="line">    <span class="keyword">for</span> word, freq <span class="keyword">in</span> v_in.items():</span><br><span class="line">        w_out = p.sub(<span class="string">&#x27;&#x27;</span>.join(pair), word)</span><br><span class="line">        v_out[w_out] = freq</span><br><span class="line">    <span class="keyword">return</span> v_out</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bpe_tokenizer</span>(<span class="params">corpus, num_merges</span>):</span><br><span class="line">    <span class="comment"># 1. 初始化，将语料库中的每个单词拆分成字符</span></span><br><span class="line">    vocab = &#123;<span class="string">&#x27; &#x27;</span>.join(word) + <span class="string">&quot; &lt;/w&gt;&quot;</span>: freq <span class="keyword">for</span> word, freq <span class="keyword">in</span> corpus.items()&#125;</span><br><span class="line"></span><br><span class="line">    bpe_merges = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_merges):</span><br><span class="line">        <span class="comment"># 2. 统计所有相邻字符对的频率</span></span><br><span class="line">        pairs = get_stats(vocab)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> pairs:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 3. 找到频率最高的符号对</span></span><br><span class="line">        best_pair = <span class="built_in">max</span>(pairs, key=pairs.get)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 4. 合并该符号对，并更新词汇表</span></span><br><span class="line">        vocab = merge_vocab(best_pair, vocab)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 5. 保存合并规则</span></span><br><span class="line">        bpe_merges.append(best_pair)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;合并 <span class="subst">&#123;i+<span class="number">1</span>&#125;</span>: <span class="subst">&#123;best_pair&#125;</span> -&gt; <span class="subst">&#123;<span class="string">&#x27;&#x27;</span>.join(best_pair)&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 最终词汇表</span></span><br><span class="line">    bpe_vocab = Counter()</span><br><span class="line">    <span class="keyword">for</span> word, freq <span class="keyword">in</span> vocab.items():</span><br><span class="line">        subwords = word.split(<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> subword <span class="keyword">in</span> subwords:</span><br><span class="line">            bpe_vocab[subword] += freq</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> bpe_merges, bpe_vocab</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bpe_encode</span>(<span class="params">text, bpe_merges</span>):</span><br><span class="line">    <span class="comment"># 1. 将文本拆分成字符</span></span><br><span class="line">    tokens = <span class="built_in">list</span>(text)</span><br><span class="line">    <span class="comment"># tokens = text.split()</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 2. 按照合并规则逐一合并</span></span><br><span class="line">    <span class="keyword">for</span> pair <span class="keyword">in</span> bpe_merges:</span><br><span class="line">        i = <span class="number">0</span></span><br><span class="line">        <span class="keyword">while</span> i &lt; <span class="built_in">len</span>(tokens) - <span class="number">1</span>:</span><br><span class="line">            <span class="keyword">if</span> tokens[i] == pair[<span class="number">0</span>] <span class="keyword">and</span> tokens[i+<span class="number">1</span>] == pair[<span class="number">1</span>]:</span><br><span class="line">                tokens[i] = <span class="string">&#x27;&#x27;</span>.join(pair)</span><br><span class="line">                tokens.pop(i+<span class="number">1</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                i += <span class="number">1</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> tokens</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="comment"># 简单的训练语料例子</span></span><br><span class="line">    corpus = &#123;</span><br><span class="line">        <span class="string">&#x27;low&#x27;</span>: <span class="number">5</span>,</span><br><span class="line">        <span class="string">&#x27;lower&#x27;</span>: <span class="number">2</span>,</span><br><span class="line">        <span class="string">&#x27;newest&#x27;</span>: <span class="number">6</span>,</span><br><span class="line">        <span class="string">&#x27;widest&#x27;</span>: <span class="number">3</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 训练BPE模型，进行10次合并</span></span><br><span class="line">    num_merges = <span class="number">10</span></span><br><span class="line">    merges, vocab = bpe_tokenizer(corpus, num_merges)</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n--- 训练结果 ---&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;合并规则:&quot;</span>, merges)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;词汇表:&quot;</span>, <span class="built_in">list</span>(vocab.keys()))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 编码新文本</span></span><br><span class="line">    test_text = <span class="string">&quot;newest lower&quot;</span></span><br><span class="line">    initial_vocab = <span class="built_in">set</span>(<span class="string">&#x27; &#x27;</span>.join(corpus.keys()).split(<span class="string">&#x27; &#x27;</span>))</span><br><span class="line">    <span class="built_in">print</span>(initial_vocab)</span><br><span class="line">    encoded_tokens = bpe_encode(test_text, merges)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n--- 新编码 ---&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;原始文本: <span class="subst">&#123;test_text&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;编码结果: <span class="subst">&#123;encoded_tokens&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- output:</span></span><br><span class="line">合并 <span class="number">1</span>: (<span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;s&#x27;</span>) -&gt; es</span><br><span class="line">合并 <span class="number">2</span>: (<span class="string">&#x27;es&#x27;</span>, <span class="string">&#x27;t&#x27;</span>) -&gt; est</span><br><span class="line">合并 <span class="number">3</span>: (<span class="string">&#x27;est&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>) -&gt; est&lt;/w&gt;</span><br><span class="line">合并 <span class="number">4</span>: (<span class="string">&#x27;l&#x27;</span>, <span class="string">&#x27;o&#x27;</span>) -&gt; lo</span><br><span class="line">合并 <span class="number">5</span>: (<span class="string">&#x27;lo&#x27;</span>, <span class="string">&#x27;w&#x27;</span>) -&gt; low</span><br><span class="line">合并 <span class="number">6</span>: (<span class="string">&#x27;n&#x27;</span>, <span class="string">&#x27;e&#x27;</span>) -&gt; ne</span><br><span class="line">合并 <span class="number">7</span>: (<span class="string">&#x27;ne&#x27;</span>, <span class="string">&#x27;w&#x27;</span>) -&gt; new</span><br><span class="line">合并 <span class="number">8</span>: (<span class="string">&#x27;new&#x27;</span>, <span class="string">&#x27;est&lt;/w&gt;&#x27;</span>) -&gt; newest&lt;/w&gt;</span><br><span class="line">合并 <span class="number">9</span>: (<span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>) -&gt; low&lt;/w&gt;</span><br><span class="line">合并 <span class="number">10</span>: (<span class="string">&#x27;w&#x27;</span>, <span class="string">&#x27;i&#x27;</span>) -&gt; wi</span><br><span class="line"></span><br><span class="line">--- 训练结果 ---</span><br><span class="line">合并规则: [(<span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;s&#x27;</span>), (<span class="string">&#x27;es&#x27;</span>, <span class="string">&#x27;t&#x27;</span>), (<span class="string">&#x27;est&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>), (<span class="string">&#x27;l&#x27;</span>, <span class="string">&#x27;o&#x27;</span>), (<span class="string">&#x27;lo&#x27;</span>, <span class="string">&#x27;w&#x27;</span>), (<span class="string">&#x27;n&#x27;</span>, <span class="string">&#x27;e&#x27;</span>), (<span class="string">&#x27;ne&#x27;</span>, <span class="string">&#x27;w&#x27;</span>), (<span class="string">&#x27;new&#x27;</span>, <span class="string">&#x27;est&lt;/w&gt;&#x27;</span>), (<span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>), (<span class="string">&#x27;w&#x27;</span>, <span class="string">&#x27;i&#x27;</span>)]</span><br><span class="line">词汇表: [<span class="string">&#x27;low&lt;/w&gt;&#x27;</span>, <span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;r&#x27;</span>, <span class="string">&#x27;&lt;/w&gt;&#x27;</span>, <span class="string">&#x27;newest&lt;/w&gt;&#x27;</span>, <span class="string">&#x27;wi&#x27;</span>, <span class="string">&#x27;d&#x27;</span>, <span class="string">&#x27;est&lt;/w&gt;&#x27;</span>]</span><br><span class="line">&#123;<span class="string">&#x27;newest&#x27;</span>, <span class="string">&#x27;lower&#x27;</span>, <span class="string">&#x27;widest&#x27;</span>, <span class="string">&#x27;low&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line">--- 新编码 ---</span><br><span class="line">原始文本: newest lower</span><br><span class="line">编码结果: [<span class="string">&#x27;new&#x27;</span>, <span class="string">&#x27;est&#x27;</span>, <span class="string">&#x27; &#x27;</span>, <span class="string">&#x27;low&#x27;</span>, <span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;r&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="byte-level-bpe">Byte-level BPE</h3>
+<p>BPE 仍然可能有 OOV 的问题，一个巧妙的转换是将文本表示为 byte
+来处理。这样就完全解决了 OOV 的问题</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">- 对于字母语言，比如英语、法语，他们的字符数量都是非常少的，数量多的是字符构成的单词</span><br><span class="line">- 对于非字母语言，比如中文、日文、韩文，他们的字符数就已经非常多了。比如中文常用汉字三四千个左右，但是如果把不常用的也放进去就有几万之多。所以如果训练多语言模型，直接使用 unicode 编码，将每个 unicode 字符当做最小单元，那么这些最小单元的数据就已经极其多了</span><br></pre></td></tr></table></figure>
+
+<p><strong>Byte-level
+BPE</strong>：基于上面的问题，就提出了另一种方案，按照 ascii
+码进行拆分，这样最小单元总共就只有256个，拆分之后再使用 BPE</p>
+<blockquote>
+<p>gpt2就是采用的这种方法<br>
+当然这样拆分之后会有很多看起来是乱码的字符存在，比如使用gpt2-xl的
+tokenizer 对 <code>你好中国</code> 按照 ascii
+码进行拆分的代码和结果如下所示（<code>你好中国</code>这四个汉字，每个字使用
+unicode 编码之后占用3个字节，所以按照 ascii 拆分后总共12个字符）</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoTokenizer</span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(<span class="string">&quot;gpt2-xl&quot;</span>)</span><br><span class="line">pre_tokenizer = tokenizer.backend_tokenizer.pre_tokenizer</span><br><span class="line"></span><br><span class="line">s = <span class="string">&quot;你好中国&quot;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">list</span>(pre_tokenizer.pre_tokenize_str(s)[<span class="number">0</span>][<span class="number">0</span>]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出结果：[&#x27;ä&#x27;, &#x27;½&#x27;, &#x27;ł&#x27;, &#x27;å&#x27;, &#x27;¥&#x27;, &#x27;½&#x27;, &#x27;ä&#x27;, &#x27;¸&#x27;, &#x27;Ń&#x27;, &#x27;å&#x27;, &#x27;Ľ&#x27;, &#x27;½&#x27;]</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="b-wordpiece">B. Wordpiece</h2>
+<p>Wordpiece 可以看作是 BPE
+的一个变体。整体流程一样，但是在选择新词的方法不同。<br>
+BPE 每次是选择词频最高的两个词的组合。而 Wordpiece
+则是选择两个点互信息(PMI)最大的词</p>
+<blockquote>
+<p>点互信息(PMI)表示两个子词之间的凝聚程度的高低</p>
+</blockquote>
+<p><span class="math display">\[PMI: L(z) = L(x,y) =
+log{\frac{p(x,y)}{p(x)p(y)}} = log{\frac{p(z)}{p(x)p(y)}}\]</span></p>
+<p><span class="math display">\[BPE_{next} =
+argmax({pair\_freq})\]</span></p>
+<p><span class="math display">\[WordPiece_{next} =
+argmax\left(\frac{pair\_freq}{first\_token_\_freq *
+second\_token\_freq}\right)\]</span></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">通过公式可以看出，Wordpiece 会选择一起出现次数更多，且各自出现次数更少的组合。而 BPE 仅仅考虑一起出现次数最多的。</span><br><span class="line">比如 AB 出现了 8次，A 出现了 10次，B 出现了 10次。CD 出现了5次，C出现了5次，D出现了5次。</span><br><span class="line">BPE 优先选择 AB， 而 Wordpiece 则优先选择 CD.</span><br></pre></td></tr></table></figure>
+
+<h2 id="c-unigram-language-modeling-unilm">C. Unigram language modeling
+(UniLM)</h2>
+<p><strong>BPE/WordPiece</strong>: 字粒度 -&gt; 合并token -&gt;
+删除被覆盖token<br>
+<strong>UniLM</strong>: 初始化一个大词表 -&gt;
+慢慢删除token（字粒度的词汇不删除）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">目标: 是删除词后的词表，使得语料的自然语言模型的似然值最大  </span><br><span class="line"></span><br><span class="line">计算的过程中，使用维特比算法来选择最优的分割和删除的词</span><br></pre></td></tr></table></figure>
+
+<h2 id="d-sentencepiece">D. Sentencepiece</h2>
+<p>Sentencepiece 主要解决多语言的问题，将输入完全认为是 unicode
+编码，不需要依赖空格和jieba等进行分词这一步</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">之前英文是通过空格来分词，中文用jieba分词来构建初始的词汇，然后加上&lt;/w&gt;，##等标记  </span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>一些语言模型使用的 Tokenization 方法 | 模型 | Tokenization | | — | —
+| | Llama | sentencepiece BPE | | Ddeepseek | Byte-level BPE | | Qwen |
+Byte-level BPE | | Yi | sentencepiece BPE |</p>
+<hr>
+<h3 id="扩展问题">扩展问题：</h3>
+<ol type="1">
+<li>对于中文等没有明确词边界的语言，Tokenization有什么特殊的挑战？常用的中文分词方法有哪些？</li>
+<li>Tokenization如何影响模型的词汇表大小？词汇表大小对模型性能有什么影响？</li>
+<li>多语言模型的Tokenization有什么特殊之处？如何处理不同语言之间的Tokenization差异？</li>
+</ol>
+<h3 id="参考">参考</h3>
+<p>[0] <a href="https://mingchao.wang/ZfZEmye9/">几种 tokenize
+策略</a></p>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>模型训练</category>
+        <category>Transformers</category>
+        <category>Tokenization</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
         <tag>面试刷题</tag>
+        <tag>Tokenization</tag>
       </tags>
   </entry>
 </search>
