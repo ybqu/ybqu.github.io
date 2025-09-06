@@ -1,0 +1,644 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>模型推理中的参数设置：topk、topp、temperature | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="大模型为什么会重复 大模型有时候会输出重复的内容。有的是段落间的重复，有时候甚至是字符级别的重复。 为什么会重复  大模型有点像是在做成语接龙  《A Theoretical Analysis of the Repetition Problem in Text Generation》  论文中对重复概率进行了建模，得出的结论是模型重复问题是存在理论上的上界的，虽然可以通过很多方法降低这个上界，但是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="模型推理中的参数设置：topk、topp、temperature">
+<meta property="og:url" content="https://ybqu.github.io/p/1047b7d4.html">
+<meta property="og:site_name" content="DouDou&#39;s blog">
+<meta property="og:description" content="大模型为什么会重复 大模型有时候会输出重复的内容。有的是段落间的重复，有时候甚至是字符级别的重复。 为什么会重复  大模型有点像是在做成语接龙  《A Theoretical Analysis of the Repetition Problem in Text Generation》  论文中对重复概率进行了建模，得出的结论是模型重复问题是存在理论上的上界的，虽然可以通过很多方法降低这个上界，但是">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ybqu.github.io/images/beamsearch_human.png">
+<meta property="article:published_time" content="2025-09-06T15:37:36.000Z">
+<meta property="article:modified_time" content="2025-09-06T15:37:36.000Z">
+<meta property="article:author" content="DouDou.Ybqu">
+<meta property="article:tag" content="LLMs">
+<meta property="article:tag" content="Transformers">
+<meta property="article:tag" content="Model Inference">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ybqu.github.io/images/beamsearch_human.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "模型推理中的参数设置：topk、topp、temperature",
+  "url": "https://ybqu.github.io/p/1047b7d4.html",
+  "image": "https://ybqu.github.io/images/beamsearch_human.png",
+  "datePublished": "2025-09-06T15:37:36.000Z",
+  "dateModified": "2025-09-06T15:37:36.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "DouDou.Ybqu",
+      "url": "https://ybqu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/avatar-circular.ico"><link rel="canonical" href="https://ybqu.github.io/p/1047b7d4.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          const hour = new Date().getHours()
+          const isNight = hour <= 24 || hour >= 18
+          if (theme === undefined) isNight ? activateDarkMode() : activateLightMode()
+          else theme === 'light' ? activateLightMode() : activateDarkMode()
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":true,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":330,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '模型推理中的参数设置：topk、topp、temperature',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js/pace.min.js"></script><div id="web_bg" style="background-image: url(/img/background_gril.jpeg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar-modified.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">27</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">23</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">28</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/avatar-circular.png" alt="Logo"><span class="site-name">DouDou's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">模型推理中的参数设置：topk、topp、temperature</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">模型推理中的参数设置：topk、topp、temperature</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-09-06T15:37:36.000Z" title="发表于 2025-09-06 23:37:36">2025-09-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-06T15:37:36.000Z" title="更新于 2025-09-06 23:37:36">2025-09-06</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/">LLMs</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/Transformers/">Transformers</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/Transformers/Model-Inference/">Model Inference</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>9分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;It has been&quot;,&quot;messageNext&quot;:&quot;days since the last update, the content of the article may be outdated.&quot;,&quot;postUpdate&quot;:&quot;2025-09-06 23:37:36&quot;}" hidden></div><h2 id="大模型为什么会重复">大模型为什么会重复</h2>
+<p>大模型有时候会输出重复的内容。有的是段落间的重复，有时候甚至是字符级别的重复。</p>
+<mark class="hl-label red">为什么会重复</mark>
+
+<p><strong>大模型有点像是在做成语接龙</strong></p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2012.14660">《A Theoretical Analysis
+of the Repetition Problem in Text Generation》</a></p>
+</blockquote>
+<p>论文中对重复概率进行了建模，得出的结论是<strong>模型重复问题是存在理论上的上界的</strong>，虽然可以通过很多方法降低这个上界，但是还是有几率发生。</p>
+<p>作者认为，重复问题是由于我们语言本身的特性所导致的。一个主要原因是存在太多单词以高概率预测同一个单词。因此，很容易回到那个单词并形成重复，这个被定义为
+<strong>high inflow 问题</strong>。</p>
+<hr>
+<p>【举例】成语接龙</p>
+<p>当我们进行成语接龙的时候，通过最后一个字要预测出以这个字开头的一个成语，但是成语本来就不多，所以很容易就循环上了。</p>
+<p>对于大模型来说，有些词作为下一个词出现的概率就是更高，所以也就容易陷入成语接龙那样的循环。</p>
+<hr>
+<p><strong>归纳头(induction heads)</strong></p>
+<p>Anthropic 的工作人员对一个迷你的 transformers
+进行了研究，建模了一个数学框架来解释 transformer
+是如何工作的。其中一个发现就是 Transformer 存在归纳头（induction
+heads）。</p>
+<p>简单来说，induction heads 就是复读机，如果 transformer
+在处理的序列中存在 AB…A 这样的 pattern，那就会把 B 输出来。 <img src="/p/1047b7d4/induction_heads.png"></p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2407.07011">《Induction Heads as an
+Essential Mechanism for Pattern Matching in In-context
+Learning》</a></p>
+</blockquote>
+<p>该论文表示 attention 会发现后面的 vintage 和前面的 vintage cars
+匹配上了，就提高了 cars
+的生成概率。而且通过一些消融实验证明了，当人工干预归纳头的 attention
+计算方式时，In-context Learning 的能力会下降。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2209.11895">《In-context Learning and
+Induction Heads》</a></p>
+</blockquote>
+<p>该论文则认为归纳头的工作机制为：[A*][B*] … [A] → [B], where A* ≈ A
+and B* ≈ B are similar in some space。
+也就是归纳头在复读的时候并不需要严格的匹配，只需要相似即可。</p>
+<p>这种重复的确实提高了 In-context Learning
+的能力，但是不可避免的就会出现重复问题。</p>
+<p><strong>self reinforcement</strong></p>
+<p>如果说 induction heads
+带来了重复问题，那么重复的概率分布是怎么样的呢？很遗憾，经过研究发现，重复的问题存在
+self reinforcement 的现象。</p>
+<blockquote>
+<p>重复 token 的次数越多，重复 token
+出现的概率就越大。而且重复的概率随着两个重复 token
+距离的缩短还会增大</p>
+</blockquote>
+<p><img src="/p/1047b7d4/self_reinforcement.png"></p>
+<p>在很多篇论文中，都发现了大模型存在 self reinforcement 的问题。比如<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1904.09751">《The Curious Case Of Neural
+Text Degeneration》</a>、<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2206.02369">《Learning to Break the Loop:
+Analyzing and Mitigating Repetitions for Neural Text
+Generation》</a>、<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2310.00297">《Understanding In-Context
+Learning From Repetitions》</a></p>
+<h2 id="为什么要有-topk-和-topp">为什么要有 TopK 和 TopP</h2>
+<h3 id="topk">TopK</h3>
+<p>TopK 最早出现在<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1805.04833">《Hierarchical Neural Story
+Generation》</a>论文中</p>
+<p>使用 TopK 的动机是作者发现 <strong>Greedy 和 Beam search
+倾向于产生来自训练集合的通用和重复的短语</strong>。而完全使用语言模型输出的概率分布，进行随机的采样可以极大地降低重复的概率。但是这样做有几率引入非常不可能出现的单词，导致上下文不连贯，最终生成的结果可能答非所问。</p>
+<p>所以取了这两个方案的折中，依然是基于某个分布采样，但是只从概率最大的
+k 个 token 进行采样。</p>
+<h3 id="topp">TopP</h3>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1904.09751">《The Curious Case Of
+Neural Text Degeneration》</a> 论文专门研究了 decode
+策略对生成结果的影响。</p>
+<p>论文有一个反直觉的发现是，基于最大化概率的解码方法（比如 Greedy/Beam
+search），会导致文本生成能力退化：<strong>输出平淡无奇，缺乏连贯性，还容易陷入重复。</strong></p>
+<p>进一步研究有两个结论：</p>
+<p><strong>开放式写作的目标和最大化概率的解码目标不一致</strong></p>
+<p>首先要明确一个问题：Beam search
+等最大概率的解码方法，其搜索路径和人类用自然语言写作到底有多大差异。</p>
+<mark class="hl-label red">是不是扩大一下 beam size 就能产生和人类书写的类似文本？</mark>
+
+<blockquote>
+<p>经过统计发现，自然语言很少在连续多个时间步中保持高概率区域，反而更倾向于选择概率较低但信息量更大的词。这一点也成了检测文本是否是
+AI 生成的一个重要特征。</p>
+</blockquote>
+<p><img src="/p/1047b7d4/beamsearch_human.png"></p>
+<p>此外，（Grice,
+1975）的会话准则表明，人类在沟通中会刻意避免陈述显而易见的内容，以追求更高效或有价值的表达。这一点其实就已经与通过最大概率来寻找答案相悖了。</p>
+<p>现在大模型通常在最后都有对齐阶段，虽然在推理的时候依然是最大概率的方法，但是这样做能从某种程度上使得模型输出的概率分布更接近人类的偏好。而且通过追踪固定单词比如“I
+don’t know“, 发现随着这几个词出现次数的增加，其出现的概率会越来越大。
+<img src="/p/1047b7d4/Token_Probabilities_for_&quot;I_don&#39;t_know.&quot;_Repeated_200_times.png"></p>
+<p>在其他的研究中也发现，与人工智能生成的文章相比，人类生成的文章表现出更高的平均单数词使用率和更长的句子长度，这表明人类写作中的语言结构更加复杂和细致入微。</p>
+<p>论文还展示了不同解码策略，下游任务上的表现和困惑度之间的关系，可以看出，困惑度小在下游任务表现并不一定好：
+<img src="/p/1047b7d4/The_Curious_Case_Of_Neural_Text_Degeneration.png"></p>
+<p><strong>语言模型的长尾分布非常不靠谱，需要截断</strong></p>
+<p>另一个研究差不多就是 TopK
+论文里的结论，长尾词的词并没有充分的学习，但是却占据了不小的概率分布，需要截断。</p>
+<p>但是 TopK
+的截断方法有点过于简单粗暴了，所以把截断的方式变成了按最大概率的累计概率和来设定一个阈值截断。</p>
+<hr>
+<blockquote>
+<p>topk/topp采样</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># transformers早期版本实现：src/transformers/generation_utils.py</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">top_k_top_p_filtering</span>(<span class="params"></span></span><br><span class="line"><span class="params">    logits: Tensor,</span></span><br><span class="line"><span class="params">    top_k: <span class="built_in">int</span> = <span class="number">0</span>,</span></span><br><span class="line"><span class="params">    top_p: <span class="built_in">float</span> = <span class="number">1.0</span>,</span></span><br><span class="line"><span class="params">    filter_value: <span class="built_in">float</span> = -<span class="built_in">float</span>(<span class="params"><span class="string">&quot;Inf&quot;</span></span>),</span></span><br><span class="line"><span class="params">    min_tokens_to_keep: <span class="built_in">int</span> = <span class="number">1</span>,</span></span><br><span class="line"><span class="params"></span>) -&gt; Tensor:</span><br><span class="line">    <span class="string">&quot;&quot;&quot; Filter a distribution of logits using top-k and/or nucleus (top-p) filtering</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">            logits: logits distribution shape (batch size, vocabulary size)</span></span><br><span class="line"><span class="string">            if top_k &gt; 0: keep only top k tokens with highest probability (top-k filtering).</span></span><br><span class="line"><span class="string">            if top_p &lt; 1.0: keep the top tokens with cumulative probability &gt;= top_p (nucleus filtering).</span></span><br><span class="line"><span class="string">                Nucleus filtering is described in Holtzman et al. (http://arxiv.org/abs/1904.09751)</span></span><br><span class="line"><span class="string">            Make sure we keep at least min_tokens_to_keep per batch example in the output</span></span><br><span class="line"><span class="string">        From: https://gist.github.com/thomwolf/1a5a29f6962089e871b94cbd09daf317</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> top_k &gt; <span class="number">0</span>:</span><br><span class="line">        top_k = <span class="built_in">min</span>(<span class="built_in">max</span>(top_k, min_tokens_to_keep), logits.size(-<span class="number">1</span>))  <span class="comment"># Safety check</span></span><br><span class="line">        <span class="comment"># Remove all tokens with a probability less than the last token of the top-k</span></span><br><span class="line">        indices_to_remove = logits &lt; torch.topk(logits, top_k)[<span class="number">0</span>][..., -<span class="number">1</span>, <span class="literal">None</span>]</span><br><span class="line">        logits[indices_to_remove] = filter_value</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> top_p &lt; <span class="number">1.0</span>:</span><br><span class="line">        sorted_logits, sorted_indices = torch.sort(logits, descending=<span class="literal">True</span>)</span><br><span class="line">        cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-<span class="number">1</span>), dim=-<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Remove tokens with cumulative probability above the threshold (token with 0 are kept)</span></span><br><span class="line">        sorted_indices_to_remove = cumulative_probs &gt; top_p</span><br><span class="line">        <span class="keyword">if</span> min_tokens_to_keep &gt; <span class="number">1</span>:</span><br><span class="line">            <span class="comment"># Keep at least min_tokens_to_keep (set to min_tokens_to_keep-1 because we add the first one below)</span></span><br><span class="line">            sorted_indices_to_remove[..., :min_tokens_to_keep] = <span class="number">0</span></span><br><span class="line">        <span class="comment"># Shift the indices to the right to keep also the first token above the threshold</span></span><br><span class="line">        sorted_indices_to_remove[..., <span class="number">1</span>:] = sorted_indices_to_remove[..., :-<span class="number">1</span>].clone()</span><br><span class="line">        sorted_indices_to_remove[..., <span class="number">0</span>] = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># scatter sorted tensors to original indexing</span></span><br><span class="line">        indices_to_remove = sorted_indices_to_remove.scatter(<span class="number">1</span>, sorted_indices, sorted_indices_to_remove)</span><br><span class="line">        logits[indices_to_remove] = filter_value</span><br><span class="line">    <span class="keyword">return</span> logits</span><br></pre></td></tr></table></figure>
+
+<p>从函数中可以清晰的看到，是先 topk 然后再进行 topp 的</p>
+<blockquote>
+<p>先进行 topk 的处理， 选出最大的 k 个 logits， 然后剩余的 logits
+值都设置为负无穷，这样 softmax 的时候概率就变成0了<br>
+然后在这 topk 个 logits 中，计算累计概率，选出符合条件的 top p 个
+logits</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># src/transformers/generation/utils.py</span></span><br><span class="line"><span class="keyword">if</span> generation_config.top_k <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> generation_config.top_k != <span class="number">0</span>:</span><br><span class="line">    processors.append(</span><br><span class="line">        TopKLogitsWarper(top_k=generation_config.top_k, min_tokens_to_keep=min_tokens_to_keep)</span><br><span class="line">    )</span><br><span class="line"><span class="keyword">if</span> generation_config.top_p <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> generation_config.top_p &lt; <span class="number">1.0</span>:</span><br><span class="line">    processors.append(</span><br><span class="line">        TopPLogitsWarper(top_p=generation_config.top_p, min_tokens_to_keep=min_tokens_to_keep)</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<p>可以看到处理的顺序还是没变， 只不过变成了 TopKLogitsWarper 和
+TopPLogitsWarper。</p>
+<h2 id="temperature温度">temperature(温度)</h2>
+<p>温度概念来源于热力学</p>
+<p><strong>玻尔兹曼分布</strong></p>
+<p>玻尔兹曼分布（Boltzmann distribution）是热力学和数学中的一个概念。
+它是一个概率分布，给出了在一个密闭空间系统中，系统处于某种状态的概率分布受温度
+<code>T</code> 和 <code>这种状态的能量</code>
+的影响。具体来说，系统处于状态 i 的 概率表示为 <span class="math display">\[p_i = \frac{1}{Q}e^{-\epsilon_{i}/kT} =
+\frac{e^{-\epsilon_i/kT}}{\sum_i^M{e^{-\epsilon_i/kT}}}\]</span></p>
+<p>其中 <span class="math inline">\(\epsilon_i\)</span> 为状态 i
+的能量。k 为玻尔兹曼常数，T 为系统的温度。</p>
+<p>公式推导：</p>
+<blockquote>
+<p>数学和统计学推导：https://www.phys.ufl.edu/~meisel/Boltzmann.pdf<br>
+信息论、Lagrangian multipliers
+和优化算法推导：https://sassafras13.github.io/BoltzmannDistribution/
+这篇是通过来推导的。</p>
+</blockquote>
+<p><strong>温度</strong></p>
+<blockquote>
+<p>从上面的式子中可以看出，这和softmax类似。事实上 softmax
+就是来源于玻尔兹曼分布，然后被借鉴到了机器学习领域。</p>
+</blockquote>
+<p>式子里有一个参数温度<span class="math inline">\(T\)</span></p>
+<blockquote>
+<p>随着温度的升高，粒子具有更多能量状态的可能性增加，也就是说，粒子能跃迁到更高能级的概率变大。相反，当温度降低时，粒子更倾向于占据低能级状态。</p>
+</blockquote>
+<p>即随着温度的变化，其概率分布也会发生变化。</p>
+<p>对于大模型来说，当模型的温度变高的时候，趋向于共同富裕，在保持概率分布的
+rank
+不变的情况下，尽可能的让概率分布到每一个词。对应到热力学，就是粒子的能量状态趋向于更多，所以加热会让系统产生更多的变化。</p>
+<p>而当温度变低的时候，则是让一部分人先富起来。此时概率最大的词会变得更大，其余词的概率则更小。对应到热力学，越冷系统就越稳定。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">温度对于大模型来说，就是调节输出多样性的一个参数</span><br><span class="line">- 温度低的情况下，就相当于做冰棍。在低温的情况下，只要材料一样，做出来的味道都差不多。此时大模型对于相同的输入倾向于不变的输出</span><br><span class="line">- 温度高的情况下，就相当于炒菜。火候不同，即使相同的输入，大模型也会倾向于不同的输出</span><br><span class="line"></span><br><span class="line">但是温度也不能太高，太高了菜就炒糊了，会导致模型出现幻觉的概率增加</span><br></pre></td></tr></table></figure>
+
+<h2 id="扩展问题">扩展问题</h2>
+<ol type="1">
+<li>人类写作和 AI 写作有什么区别？</li>
+<li>如何设计一个系统来检测一段文本是 AI 生成的？</li>
+<li>Top k 和 Top p 同时设置的时候怎么采样？</li>
+<li>困惑度的含义是什么？用困惑度来衡量写作质量是否合适？</li>
+<li>一个模型经过了强化学习之后，困惑度预期有如何变化？</li>
+<li>如果采样的时候丢弃 topk 和
+topp，允许采样到一些低概率的token，重复问题是否缓解？带来的问题又是什么？</li>
+<li>都有哪些方法可以防止大模型重复？</li>
+<li>如果持续让大模型输出重复的内容，最终会一直不停的重复？还是有可能输出其他的内容？</li>
+</ol>
+<h2 id="refrence--进一步阅读">Refrence &amp;&amp; 进一步阅读</h2>
+<p>[0] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1904.09751">THE CURIOUS CASE OF
+NEURAL TEXT DeGENERATION</a><br>
+[1] <a target="_blank" rel="noopener" href="https://www.phys.ufl.edu/~meisel/Boltzmann.pdf">Derivation
+of the Boltzmann Distribution</a><br>
+[2] <a target="_blank" rel="noopener" href="https://sassafras13.github.io/BoltzmannDistribution/">Deriving the
+Boltzmann Distribution</a><br>
+[3] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1503.02531">Distilling the Knowledge
+in a Neural Network</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://ybqu.github.io">DouDou.Ybqu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://ybqu.github.io/p/1047b7d4.html">https://ybqu.github.io/p/1047b7d4.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://ybqu.github.io" target="_blank">DouDou's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/LLMs/">LLMs</a><a class="post-meta__tags" href="/tags/Transformers/">Transformers</a><a class="post-meta__tags" href="/tags/Model-Inference/">Model Inference</a></div><div class="post-share"><div class="social-share" data-image="/images/beamsearch_human.png" data-sites="twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/p/ac08e4b6.html" title="model.eval()、model.train()、torch.no_grad()、torch.inference_mode()"><img class="cover" src="/img/coffee.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">model.eval()、model.train()、torch.no_grad()、torch.inference_mode()</div></div><div class="info-2"><div class="info-item-1">model.train() 和 model.eval()  model.train() -&gt; train mode model.eval() -&gt; eval mode  为什么要有这两种模式  因为模型中的有些模块在训练和预测不一致导致的。典型的模块就是 BatchNorm 和 Dropout。 BatchNorm 对于 BatchNorm 来说，训练的时候其实并不关心整体样本的均值和方差，只需要在当前 batch内稳定训练就可以了。 但是预测的时候，也必须得找一个均值和方差。那最好的选择就是通过整体的样本来进行估计（真正推理过程中貌似很难知道整体样本）。 但是这里面又有一些细节，比如原始论文中训练时方差用的是有偏估计，但是推理的时候用的是无偏估计。这个问题在几年前一直是个讨论的热点。  https://github.com/pytorch/pytorch/issues/1410  Dropout 训练的时候会随机 drop 一些神经元，但是预测的时候则是使用全部的神经元然后进行计算。 正是由于这种训练和预测的不一致性，就导致我们必须要告诉模型，什么时候是训练的状态，...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/p/ac08e4b6.html" title="model.eval()、model.train()、torch.no_grad()、torch.inference_mode()"><img class="cover" src="/img/coffee.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-06</div><div class="info-item-2">model.eval()、model.train()、torch.no_grad()、torch.inference_mode()</div></div><div class="info-2"><div class="info-item-1">model.train() 和 model.eval()  model.train() -&gt; train mode model.eval() -&gt; eval mode  为什么要有这两种模式  因为模型中的有些模块在训练和预测不一致导致的。典型的模块就是 BatchNorm 和 Dropout。 BatchNorm 对于 BatchNorm 来说，训练的时候其实并不关心整体样本的均值和方差，只需要在当前 batch内稳定训练就可以了。 但是预测的时候，也必须得找一个均值和方差。那最好的选择就是通过整体的样本来进行估计（真正推理过程中貌似很难知道整体样本）。 但是这里面又有一些细节，比如原始论文中训练时方差用的是有偏估计，但是推理的时候用的是无偏估计。这个问题在几年前一直是个讨论的热点。  https://github.com/pytorch/pytorch/issues/1410  Dropout 训练的时候会随机 drop 一些神经元，但是预测的时候则是使用全部的神经元然后进行计算。 正是由于这种训练和预测的不一致性，就导致我们必须要告诉模型，什么时候是训练的状态，...</div></div></div></a><a class="pagination-related" href="/p/1217c726.html" title="神经网络中的权重共享"><img class="cover" src="/images/MobileLLM.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-06</div><div class="info-item-2">神经网络中的权重共享</div></div><div class="info-2"><div class="info-item-1">权重共享  权重共享（Weight Sharing）就是在模型的不同部分使用相同参数的技术。有时候也叫 Parameter sharing, 或者 Weight Tying  权重共享的优缺点  参考Weight Tying部分  优点：  可学习的参数变少，模型更容易训练，收敛更快 在内存受限、需要通信的推理场景，能够加快推理速度 权重共享有一定的正则化的作用，因为可学习的参数变少了 -&gt; 相当于提升了模型的泛化能力。这个理论可以从 Bias Variance Trade-off 的角度来证明（码农要术：机器学习篇：泛化挑战）  缺点：  一些权重可能理论上在完成任务的功能上就是正交的，共享之后可能会有新的问题。比如 词向量与 LM Head 的共享可能导致各向异性的问题  神经网络中常见的一些权重共享 基于位置的共享 CNN 中，同一个卷积核的权重在整个图像的不同位置是共享的。而 Transformers 中的 FNN 层也类似，序列的不同位置共享 MLP。 嵌入层和输出层权重共享 即常说的 Weight Tying, 将词向量与最后的 lm head 的权重进行共享。...</div></div></div></a><a class="pagination-related" href="/p/f5acc630.html" title="激活函数在神经网络中的作用"><img class="cover" src="/images/relu%E5%AF%BC%E6%95%B0.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-06</div><div class="info-item-2">激活函数在神经网络中的作用</div></div><div class="info-2"><div class="info-item-1">激活函数在神经网络中的作用 1. 代数角度：引入非线性（Introduce Non-Linearity） 这是最根本的目的。如果没有激活函数，无论神经网络有多少层，其最终的输出都只是输入数据的线性组合（想象一下矩阵连乘，最终还是一个矩阵）。线性模型的能力极其有限，根本无法拟合现实中复杂非线性的 patterns（比如简单的xor（异或）、图像、视频、语音、语言等数据特征）。激活函数通过一个非线性的映射，使得神经网络成为了一个“万能函数逼近器”，能够拟合极其复杂的函数（这个理论称作Universal Approximation Theorem）。 Universal Approximation Theorem- 本质上是近似和逼近，并不能变成任意的函数- 理论上存在，但是我们训练模型的方法并不一定能保证最终得到的结果是最优的逼近函数  神经网络可视化  一个非线性变换后变成线性可分的例子：  2. 信息学角度：决定神经元的激活状态（Determine the Firing of a Neuron）： 从信息论的角度来说，神经网络就是对信息的增强和压缩。这里激活函数就起到了很重要的作...</div></div></div></a><a class="pagination-related" href="/p/afe1af1b.html" title="给一个网络结构，如何计算模型的参数量"><img class="cover" src="/images/model_parameters.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">给一个网络结构，如何计算模型的参数量</div></div><div class="info-2"><div class="info-item-1"> Linear  Linear(in_features=w, out_features=h, bias=True)  就是个矩阵，有时候会加上bias。参数量为：\(w*h+h\),如果bias=False，则为\(w*h\)  Embedding  可以认为是一个没有 bias 的 Linear  Norm   Layer Norm里面有两个可训练参数,\(\gamma\)和\(\beta\), 假设hidden_size 的大小为 \(h\), hidden_size 的每一维都有两个，所以是 \(2h\) 个 RMSNorm 每一维则只有一个可训练参数\(\gamma\), 所以有 \(h\) 个   Active 和 Dropout  没有可训练参数  以 llama3 和 qwen2 举例：  meta-llama/Meta-Llama-3-8B  模型结构 from transformers import AutoModelForCausalLMmodel_llama3 = AutoModelForCausalLM.from_pretrained(      mode...</div></div></div></a><a class="pagination-related" href="/p/b8631c21.html" title="为什么现在的LLM都是Decoder-only的架构"><img class="cover" src="/img/coffee.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">为什么现在的LLM都是Decoder-only的架构</div></div><div class="info-2"><div class="info-item-1">苏剑林｜为什么现在的LLM都是Decoder-only的架构？ 为什么现在的LLM都是Decoder only的架构？ 苏剑林｜《为什么现在的LLM都是Decoder-only的架构？》FAQ 为什么现在 Decoder-only 成为大模型的主流架构，相比于 Encoder-Decoder 的架构好在哪里？ 主要有三方面的原因，包括工程实现、计算效率、以及任务适配度  工程实现优势  Decoder-only 简化了 Transformer 的工程实现，仅需要实现 Masked Attention 机制，无需考虑无 Mask 的 Attention，以及 Cross-Attention 的复杂性  计算效率优势  节省参数：在同等深度（层数）设定下，并且假设超参数设置相同（如头数、隐层维数），Decoder-only 的参数量是 Encoder-Decoder 的一半 节省算力：Encoder-Decoder 架构的 Encoder 部分采用无掩模的注意力机制，只有 Decoder 部分采用 Masked Attention，Masked Attention 计算量是无掩模 A...</div></div></div></a><a class="pagination-related" href="/p/4d14af89.html" title="一些面试题集合-1"><img class="cover" src="/img/coffee.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">一些面试题集合-1</div></div><div class="info-2"><div class="info-item-1">苏剑林｜为什么现在的LLM都是Decoder-only的架构？ 为什么现在的LLM都是Decoder only的架构？ 苏剑林｜《为什么现在的LLM都是Decoder-only的架构？》FAQ 为什么现在 Decoder-only 成为大模型的主流架构，相比于 Encoder-Decoder 的架构好在哪里？ 主要有三方面的原因，包括工程实现、计算效率、以及任务适配度  工程实现优势  Decoder-only 简化了 Transformer 的工程实现，仅需要实现 Masked Attention 机制，无需考虑无 Mask 的 Attention，以及 Cross-Attention 的复杂性  计算效率优势  节省参数：在同等深度（层数）设定下，并且假设超参数设置相同（如头数、隐层维数），Decoder-only 的参数量是 Encoder-Decoder 的一半 节省算力：Encoder-Decoder 架构的 Encoder 部分采用无掩模的注意力机制，只有 Decoder 部分采用 Masked Attention，Masked Attention 计算量是无掩模 A...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar-modified.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">DouDou.Ybqu</div><div class="author-info-description">I always want to calm down and write something.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">27</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">23</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">28</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ybqu"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E9%87%8D%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">大模型为什么会重复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%9C%89-topk-%E5%92%8C-topp"><span class="toc-number">2.</span> <span class="toc-text">为什么要有 TopK 和 TopP</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#topk"><span class="toc-number">2.1.</span> <span class="toc-text">TopK</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topp"><span class="toc-number">2.2.</span> <span class="toc-text">TopP</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#temperature%E6%B8%A9%E5%BA%A6"><span class="toc-number">3.</span> <span class="toc-text">temperature(温度)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A9%E5%B1%95%E9%97%AE%E9%A2%98"><span class="toc-number">4.</span> <span class="toc-text">扩展问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#refrence--%E8%BF%9B%E4%B8%80%E6%AD%A5%E9%98%85%E8%AF%BB"><span class="toc-number">5.</span> <span class="toc-text">Refrence &amp;&amp; 进一步阅读</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/p/1047b7d4.html" title="模型推理中的参数设置：topk、topp、temperature"><img src="/images/beamsearch_human.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="模型推理中的参数设置：topk、topp、temperature"/></a><div class="content"><a class="title" href="/p/1047b7d4.html" title="模型推理中的参数设置：topk、topp、temperature">模型推理中的参数设置：topk、topp、temperature</a><time datetime="2025-09-06T15:37:36.000Z" title="发表于 2025-09-06 23:37:36">2025-09-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/ac08e4b6.html" title="model.eval()、model.train()、torch.no_grad()、torch.inference_mode()"><img src="/img/coffee.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="model.eval()、model.train()、torch.no_grad()、torch.inference_mode()"/></a><div class="content"><a class="title" href="/p/ac08e4b6.html" title="model.eval()、model.train()、torch.no_grad()、torch.inference_mode()">model.eval()、model.train()、torch.no_grad()、torch.inference_mode()</a><time datetime="2025-09-06T14:32:33.000Z" title="发表于 2025-09-06 22:32:33">2025-09-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/1217c726.html" title="神经网络中的权重共享"><img src="/images/MobileLLM.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="神经网络中的权重共享"/></a><div class="content"><a class="title" href="/p/1217c726.html" title="神经网络中的权重共享">神经网络中的权重共享</a><time datetime="2025-09-06T08:14:59.000Z" title="发表于 2025-09-06 16:14:59">2025-09-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/f5acc630.html" title="激活函数在神经网络中的作用"><img src="/images/relu%E5%AF%BC%E6%95%B0.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="激活函数在神经网络中的作用"/></a><div class="content"><a class="title" href="/p/f5acc630.html" title="激活函数在神经网络中的作用">激活函数在神经网络中的作用</a><time datetime="2025-09-06T08:12:58.000Z" title="发表于 2025-09-06 16:12:58">2025-09-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/5f1b788d.html" title="pytorch常用操作"><img src="/images/pytorch.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="pytorch常用操作"/></a><div class="content"><a class="title" href="/p/5f1b788d.html" title="pytorch常用操作">pytorch常用操作</a><time datetime="2025-08-31T10:26:30.000Z" title="发表于 2025-08-31 18:26:30">2025-08-31</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-flex"><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">LLMs</div><div class="footer-flex-content"><a href="https://docs.pytorch.org/tutorials/" target="_blank" title="pytorch">pytorch</a><a href="https://huggingface.co/" target="_blank" title="Hugging Face">Hugging Face</a><a href="https://modelscope.cn/home" target="_blank" title="ModelScope">ModelScope</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">Paper Reading</div><div class="footer-flex-content"><a href="https://spaces.ac.cn/" target="_blank" title="苏剑林 | 科学空间">苏剑林 | 科学空间</a><a href="https://arxiv.org/" target="_blank" title="arXiv">arXiv</a><a href="https://papers.cool/" target="_blank" title="Cool Papers">Cool Papers</a><a href="https://www.aclweb.org/portal/" target="_blank" title="Aclweb">Aclweb</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">扩展</div><div class="footer-flex-content"><a href="/Gallery/" target="_blank" title="图库">图库</a><a href="/messageboard/" target="_blank" title="留言板">留言板</a><a href="/link/" target="_blank" title="友链">友链</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">框架</div><div class="footer-flex-content"><a href="https://hexo.io/zh-cn/" target="_blank" title="Hexo">Hexo</a><a href="https://butterfly.js.org/" target="_blank" title="Butterfly">Butterfly</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">更多</div><div class="footer-flex-content"><div><img src='/img/avatar.png' alt='JerryC' width='100px' height='100px'></div></div></div></div></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By DouDou.Ybqu</span><span class="framework-info"><span class="footer-separator">|</span><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.4.3</a></span></div><div class="footer_custom_text"><a href="icp链接"><img class="icp-icon" src="icp图片"><span>京ICP备-xxxxxxx号</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const applyThemeDefaultsConfig = theme => {
+    if (theme === 'dark-mode') {
+      Chart.defaults.color = "rgba(255, 255, 255, 0.8)"
+      Chart.defaults.borderColor = "rgba(255, 255, 255, 0.2)"
+      Chart.defaults.scale.ticks.backdropColor = "transparent"
+    } else {
+      Chart.defaults.color = "rgba(0, 0, 0, 0.8)"
+      Chart.defaults.borderColor = "rgba(0, 0, 0, 0.1)"
+      Chart.defaults.scale.ticks.backdropColor = "transparent"
+    }
+  }
+
+  // Recursively traverse the config object and automatically apply theme-specific color schemes
+  const applyThemeConfig = (obj, theme) => {
+    if (typeof obj !== 'object' || obj === null) return
+
+    Object.keys(obj).forEach(key => {
+      const value = obj[key]
+      // If the property is an object and has theme-specific options, apply them
+      if (typeof value === 'object' && value !== null) {
+        if (value[theme]) {
+          obj[key] = value[theme] // Apply the value for the current theme
+        } else {
+          // Recursively process child objects
+          applyThemeConfig(value, theme)
+        }
+      }
+    })
+  }
+
+  const runChartJS = ele => {
+    window.loadChartJS = true
+
+    Array.from(ele).forEach((item, index) => {
+      const chartSrc = item.firstElementChild
+      const chartID = item.getAttribute('data-chartjs-id') || ('chartjs-' + index) // Use custom ID or default ID
+      const width = item.getAttribute('data-width')
+      const existingCanvas = document.getElementById(chartID)
+
+      // If a canvas already exists, remove it to avoid rendering duplicates
+      if (existingCanvas) {
+          existingCanvas.parentNode.remove()
+      }
+
+      const chartDefinition = chartSrc.textContent
+      const canvas = document.createElement('canvas')
+      canvas.id = chartID
+
+      const div = document.createElement('div')
+      div.className = 'chartjs-wrap'
+
+      if (width) {
+        div.style.width = width
+      }
+
+      div.appendChild(canvas)
+      chartSrc.insertAdjacentElement('afterend', div)
+
+      const ctx = document.getElementById(chartID).getContext('2d')
+
+      const config = JSON.parse(chartDefinition)
+
+      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark-mode' : 'light-mode'
+
+      // Set default styles (initial setup)
+      applyThemeDefaultsConfig(theme)
+
+      // Automatically traverse the config and apply dual-mode color schemes
+      applyThemeConfig(config, theme)
+
+      new Chart(ctx, config)
+    })
+  }
+
+  const loadChartJS = () => {
+    const chartJSEle = document.querySelectorAll('#article-container .chartjs-container')
+    if (chartJSEle.length === 0) return
+
+    window.loadChartJS ? runChartJS(chartJSEle) : btf.getScript('https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js').then(() => runChartJS(chartJSEle))
+  }
+
+  // Listen for theme change events
+  btf.addGlobalFn('themeChange', loadChartJS, 'chartjs')
+  btf.addGlobalFn('encrypt', loadChartJS, 'chartjs')
+
+  window.pjax ? loadChartJS() : document.addEventListener('DOMContentLoaded', loadChartJS)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-mapping":"url","data-category":"Announcements","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'ybqu/giscus',
+      'data-repo-id': 'R_kgDOPm8Q3A',
+      'data-category-id': 'DIC_kwDOPm8Q3M4CuxXc',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="false"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
