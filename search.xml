@@ -532,74 +532,6 @@ JT-Ushio/MHA2MLA</a></p>
       </tags>
   </entry>
   <entry>
-    <title>Transformers 的 LayerNorm 可以并行么？</title>
-    <url>/p/b0f36060.html</url>
-    <content><![CDATA[<p><span class="math display">\[\sigma^2 = \frac{1}{N} \sum_{i=1}^N
-(x_i)^2 - \mu^2\]</span></p>
-<blockquote>
-<p>并行的时候，一边算平方和，一边算全部的和。最后平方和与均值都可以算出来，然后按公式一减就出来了<br>
-!
-但是受限于计算机计算精度的问题，这个公式当两个平方项都很大时，精度会失真，导致算出来的方差很不稳定，甚至有可能是负数</p>
-</blockquote>
-<p>Transfromers 无论是在 pytorch，还是在
-apex，还是在其他一些加速框架比如 oneflow 中，都采用了Welford online
-Algorithm。这个算法是 Welford 在 1962 年发表的<a href="https://dacemirror.sci-hub.st/journal-article/5acdb3bfff775e64387580383e2f7d4c/welford1962.pdf">《Note
-on a Method for Calculating Corrected Sums of Squares and
-Products》</a>中提出。他给出的算法，可以在一个集合新增一个元素的
-时候，均值和方差的不需要把所有的数都遍历一遍，而是根据之前集合的均值和方差就可以直接计算出来</p>
-<p>而在 1972 年，Chan 发表了<a href="http://i.stanford.edu/pub/cstr/reports/cs/tr/79/773/CS-TR-79-773.pdf">《Updating
-Formulae and a Pairwise Algorithm for Computing Sample
-Variances》</a>，可以认为是 Welford Algorithm
-的一个升级版本，可以根据两个集合的均值和方差直接
-计算出整体的均值和方差。当然如果两个集合中，某一个集合只有一个元素，算法就退化成
-Welford Algorithm
-了。这个算法为大规模并行计算均值和方差提供了理论基础</p>
-<p>由于 Welford’s Algorithm 是 Chan’s Algorithm
-的一个特例，所以下面简单说一下 Chan’s Algorithm</p>
-<div align="center">
-    <img src="/p/b0f36060/Chans_Algorithm.png" style="width: 70%;">
-</div>
-
-<h2 id="代码">代码</h2>
-<p>由于 Chan 和 Welford 算法的并行体质，Nvidia 的 Apex
-库率先实现了这个方法，叫做 Fused LayerNorm。</p>
-<p>为啥叫 Fused？因为把所有的计算都融合 (fuse) 到一个核函数里了,
-不需要与 CPU 来回通信。</p>
-<p>可以重点看代码开头的 cuWelfordOnlineSum 和 cuChanOnlineSum
-两个函数。对应 python 代码入口为
-apex.normalization.fused_layer_norm.FusedLayerNorm</p>
-<blockquote>
-<p>代码：https://github.com/NVIDIA/apex/blob/c3fad1ad120b23055f6630da0b029c8b626db78f/csrc/layer_norm_cuda_kernel.cu#L670</p>
-</blockquote>
-<p>pytorch 后来也实现实现了，可以看 cuWelfordOnlineSum 和
-cuWelfordCombine 两个函数</p>
-<blockquote>
-<p>代码：https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/native/cuda/layer_norm_kernel.cu</p>
-</blockquote>
-<p>Oneflow 后来又进一步根据输入的大小优化了 Fused Layer Norm 的性能</p>
-<blockquote>
-<p>代码：https://github.com/Oneflow-Inc/oneflow/blob/master/oneflow/core/cuda/layer_norm.cuh</p>
-</blockquote>
-<p>所以现在我们使用 pytorch 和其他加速库的 layernorm
-函数底层已经实现了并行。我们这些调包侠在用 python
-写代码的时候，要记住，哪有什么岁月静好，都是 C++ 和 Cuda
-大佬们在负重前行。</p>
-]]></content>
-      <categories>
-        <category>LLMs</category>
-        <category>Transformers</category>
-        <category>Normalization</category>
-        <category>模型训练</category>
-        <category>模型并行</category>
-      </categories>
-      <tags>
-        <tag>LLMs</tag>
-        <tag>Transformers</tag>
-        <tag>Normalization</tag>
-        <tag>模型并行</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>FeedForward介绍</title>
     <url>/p/53a334ca.html</url>
     <content><![CDATA[<p><a href="https://www.zhihu.com/question/665731716/answer/1888856285438534538">为什么transformer的FFN需要先升维再降维？</a></p>
@@ -696,6 +628,74 @@ MoE 的思想来将 FFN
         <tag>LLMs</tag>
         <tag>Transformers</tag>
         <tag>FeedForward</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Transformers 的 LayerNorm 可以并行么？</title>
+    <url>/p/b0f36060.html</url>
+    <content><![CDATA[<p><span class="math display">\[\sigma^2 = \frac{1}{N} \sum_{i=1}^N
+(x_i)^2 - \mu^2\]</span></p>
+<blockquote>
+<p>并行的时候，一边算平方和，一边算全部的和。最后平方和与均值都可以算出来，然后按公式一减就出来了<br>
+!
+但是受限于计算机计算精度的问题，这个公式当两个平方项都很大时，精度会失真，导致算出来的方差很不稳定，甚至有可能是负数</p>
+</blockquote>
+<p>Transfromers 无论是在 pytorch，还是在
+apex，还是在其他一些加速框架比如 oneflow 中，都采用了Welford online
+Algorithm。这个算法是 Welford 在 1962 年发表的<a href="https://dacemirror.sci-hub.st/journal-article/5acdb3bfff775e64387580383e2f7d4c/welford1962.pdf">《Note
+on a Method for Calculating Corrected Sums of Squares and
+Products》</a>中提出。他给出的算法，可以在一个集合新增一个元素的
+时候，均值和方差的不需要把所有的数都遍历一遍，而是根据之前集合的均值和方差就可以直接计算出来</p>
+<p>而在 1972 年，Chan 发表了<a href="http://i.stanford.edu/pub/cstr/reports/cs/tr/79/773/CS-TR-79-773.pdf">《Updating
+Formulae and a Pairwise Algorithm for Computing Sample
+Variances》</a>，可以认为是 Welford Algorithm
+的一个升级版本，可以根据两个集合的均值和方差直接
+计算出整体的均值和方差。当然如果两个集合中，某一个集合只有一个元素，算法就退化成
+Welford Algorithm
+了。这个算法为大规模并行计算均值和方差提供了理论基础</p>
+<p>由于 Welford’s Algorithm 是 Chan’s Algorithm
+的一个特例，所以下面简单说一下 Chan’s Algorithm</p>
+<div align="center">
+    <img src="/p/b0f36060/Chans_Algorithm.png" style="width: 70%;">
+</div>
+
+<h2 id="代码">代码</h2>
+<p>由于 Chan 和 Welford 算法的并行体质，Nvidia 的 Apex
+库率先实现了这个方法，叫做 Fused LayerNorm。</p>
+<p>为啥叫 Fused？因为把所有的计算都融合 (fuse) 到一个核函数里了,
+不需要与 CPU 来回通信。</p>
+<p>可以重点看代码开头的 cuWelfordOnlineSum 和 cuChanOnlineSum
+两个函数。对应 python 代码入口为
+apex.normalization.fused_layer_norm.FusedLayerNorm</p>
+<blockquote>
+<p>代码：https://github.com/NVIDIA/apex/blob/c3fad1ad120b23055f6630da0b029c8b626db78f/csrc/layer_norm_cuda_kernel.cu#L670</p>
+</blockquote>
+<p>pytorch 后来也实现实现了，可以看 cuWelfordOnlineSum 和
+cuWelfordCombine 两个函数</p>
+<blockquote>
+<p>代码：https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/native/cuda/layer_norm_kernel.cu</p>
+</blockquote>
+<p>Oneflow 后来又进一步根据输入的大小优化了 Fused Layer Norm 的性能</p>
+<blockquote>
+<p>代码：https://github.com/Oneflow-Inc/oneflow/blob/master/oneflow/core/cuda/layer_norm.cuh</p>
+</blockquote>
+<p>所以现在我们使用 pytorch 和其他加速库的 layernorm
+函数底层已经实现了并行。我们这些调包侠在用 python
+写代码的时候，要记住，哪有什么岁月静好，都是 C++ 和 Cuda
+大佬们在负重前行。</p>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>Transformers</category>
+        <category>Normalization</category>
+        <category>模型训练</category>
+        <category>模型并行</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
+        <tag>Normalization</tag>
+        <tag>模型并行</tag>
       </tags>
   </entry>
   <entry>
@@ -1844,291 +1844,6 @@ Autograd 的梯度计算机制，所以当试图修改梯度计算状态的时�
       </tags>
   </entry>
   <entry>
-    <title>为什么现在的LLM都是Decoder-only的架构</title>
-    <url>/p/b8631c21.html</url>
-    <content><![CDATA[<p><a href="https://spaces.ac.cn/archives/9529">苏剑林｜为什么现在的LLM都是Decoder-only的架构？</a>
-<a href="https://www.zhihu.com/question/588325646">为什么现在的LLM都是Decoder
-only的架构？</a> <a href="https://spaces.ac.cn/archives/9547">苏剑林｜《为什么现在的LLM都是Decoder-only的架构？》FAQ</a></p>
-<h2 id="为什么现在-decoder-only-成为大模型的主流架构相比于-encoder-decoder-的架构好在哪里">为什么现在
-Decoder-only 成为大模型的主流架构，相比于 Encoder-Decoder
-的架构好在哪里？</h2>
-<p>主要有三方面的原因，包括工程实现、计算效率、以及任务适配度</p>
-<ol type="1">
-<li><strong>工程实现优势</strong></li>
-</ol>
-<p>Decoder-only 简化了 Transformer 的工程实现，仅需要实现 Masked
-Attention 机制，无需考虑无 Mask 的 Attention，以及 Cross-Attention
-的复杂性</p>
-<ol start="2" type="1">
-<li><strong>计算效率优势</strong></li>
-</ol>
-<p><strong>节省参数</strong>：在同等深度（层数）设定下，并且假设超参数设置相同（如头数、隐层维数），Decoder-only
-的参数量是 Encoder-Decoder 的一半</p>
-<p><strong>节省算力</strong>：Encoder-Decoder 架构的 Encoder
-部分采用无掩模的注意力机制，只有 Decoder 部分采用 Masked
-Attention，Masked Attention 计算量是无掩模 Attention 的一半</p>
-<p><strong>推理加速</strong>：在推理阶段，Decoder-only 可以利用 KV-Cache
-复用机制，显著降低多轮对话的延迟，而 Encoder-Decoder
-则需要重新计算编码器输出，缓存效率较低（这个问题在多轮对话场景中尤为突出）</p>
-<table>
-<thead>
-<tr>
-<th>场景</th>
-<th>Decoder-only</th>
-<th>Encoder-Decoder</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>训练成本</td>
-<td>一次前向计算，无编码-解码交互</td>
-<td>编码器+解码器双重计算，耗时更长</td>
-</tr>
-<tr>
-<td>推理延迟</td>
-<td>支持 KV-Cache 复用，多轮对话延迟降低 30%</td>
-<td>需重新计算编码器输出，缓存效率低</td>
-</tr>
-<tr>
-<td>参数量化</td>
-<td>同等效果下参数利用率更高（如 LLaMA-13B 性能近似于 T5-11B）</td>
-<td>需两倍参数达到相近效果</td>
-</tr>
-</tbody>
-</table>
-<ol start="3" type="1">
-<li><strong>任务适配度优势</strong></li>
-</ol>
-<p>CLM
-（因果语言建模）预训练目标在文本生成方面的先进性，已经被广泛证明，Decoder-only
-天然适配 CLM，并且进一步方便了 Prompting、In-Context Learning 的实现</p>
-<ol start="4" type="1">
-<li><strong>理论：双向注意力存在低秩问题</strong></li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">理论上是因为Encoder的双向注意力会存在低秩问题，这可能会削弱模型表达能力，就生成任务而言，引入双向注意力并无实质好处。而Encoder-Decoder架构之所以能够在某些场景下表现更好，大概只是因为它多了一倍参数。所以，在同等参数量、同等推理成本下，Decoder-only架构就是最优选择了。</span><br></pre></td></tr></table></figure>
-
-<p>Attention矩阵一般是由一个低秩分解的矩阵加softmax而来，具体来说是一个<span class="math inline">\(n×d\)</span>的矩阵与<span class="math inline">\(d×n\)</span>的矩阵相乘后再加softmax（n≫d），这种形式的Attention的矩阵会因为低秩问题而带来表达能力的下降，具体分析参考<a href="https://arxiv.org/pdf/2103.03404">《Attention is Not All You Need:
-Pure Attention Loses Rank Doubly Exponentially with Depth》</a></p>
-<p>对于Decoder-only架构的Attention矩阵是一个<strong>下三角阵</strong>，注意三角阵的行列式等于它对角线元素之积，<strong>由于softmax的存在，对角线必然都是正数，所以它的行列式必然是正数，即Decoder-only架构的Attention矩阵一定是满秩的！</strong></p>
-<blockquote>
-<p>满秩意味着理论上有更强的表达能力，也就是说，Decoder-only架构的Attention矩阵在理论上具有更强的表达能力，改为双向注意力反而会变得不足</p>
-</blockquote>
-<p>还有个间接支持这一观点的现象，那就是:</p>
-<blockquote>
-<p>线性Attention在语言模型任务上（单向注意力）与标准Attention的差距，小于它在MLM任务上（双向注意力）与标准Attention的差距，也就是说，<strong>线性Attention在双向注意力任务上的效果相对更差</strong>。这是因为线性Attention在做语言模型任务时，它的Attention矩阵跟标准Attention一样都是满秩的下三角阵；在做MLM任务时，线性Attention矩阵的秩比标准Attention矩阵更低（线性Attention是<span class="math inline">\(n×d\)</span>的矩阵与<span class="math inline">\(d×n\)</span>的矩阵相乘，秩一定不超过d，标准Attention是<span class="math inline">\(n×d\)</span>的矩阵与<span class="math inline">\(d×n\)</span>的矩阵相乘后加softmax，softmax会有一定的升秩作用）</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">实验证明，在语言建模类任务（文本生成、故事创作、代码补全）中，Decoder-only 的困惑度（PPL）显著低于 Encoder-Decoder。 而类似 T5 这样 Encoder-Decoder 架构的 Transformer 在各种 Seq2Seq 任务（如机器翻译、文本摘要、代码生成等）中表现优秀。虽在翻译任务表现优异，但因参数量翻倍（11B T5≈5.5B GPT），公平比较下无优势</span><br></pre></td></tr></table></figure>
-
-<h2 id="decoder-only-架构的注意力矩阵为什么是满秩的满秩注意力矩阵有什么优势">Decoder-only
-架构的注意力矩阵为什么是满秩的？满秩注意力矩阵有什么优势？</h2>
-<p>Decoder-only 架构的核心是因果注意力（Causal
-Attention），其注意力矩阵是严格的下三角矩阵，因为三角矩阵的行列式 =
-对角线元素之积，又 Softmax
-保证了注意力矩阵中所有元素均为正，因此对角线元素也均为正 -&gt;
-行列式恒为正 -&gt; 矩阵满秩</p>
-<p>满秩注意力矩阵的优势包括：</p>
-<ul>
-<li><strong>完全的位置关系建模</strong>：满秩矩阵的行/列向量线性无关，能精确表示序列中任意位置的依赖关系</li>
-<li><strong>更大的模型容量</strong>：注意力矩阵中没有冗余参数（因为行/列向量线性无关，彼此无法线性表示），能够更好地利用参数空间，提升模型的表达能力</li>
-<li><strong>工程实践优势</strong>：相比与 Encoder-Decoder
-模型，Decoder-only 的泛化能力更强（GPT 的 Zero-shot 能力强于
-T5），微调时收敛更快</li>
-</ul>
-<h2 id="大模型的灾难性遗忘问题是什么怎么解決">大模型的灾难性遗忘问题是什么？怎么解決？</h2>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">大模型的灾难性遗忘（Catastrophic Forgetting）是指模型在适应新任务或新数据时，对先前学到的知识出现大面积遗忘，导致其在旧任务上的性能急剧下降的现象，宏观表现为大模型微调后&quot;变傻了&quot;</span><br></pre></td></tr></table></figure>
-
-<p><strong>原因</strong>：造成灾难性遗忘的根本原因是由于在训练（微调）过程中反向传播优化新任务损失时，全局权重更新会破坏旧任务对应的参数模式</p>
-<p><strong>解决方案</strong>：</p>
-<ol type="1">
-<li>参数（结构）隔离：为不同任务分配独立参数路径，避免共享参数的冲突更新</li>
-</ol>
-<blockquote>
-<p>代表方法：Adapter/LoRA
-模块化扩展，冻结原模型参数，插入轻量级可训练模块（如AdapterLoRA），仅更新新增参数</p>
-</blockquote>
-<ol start="2" type="1">
-<li>数据回放：混合新旧任务数据训练，强制模型同时记忆历史与当前知识</li>
-</ol>
-<blockquote>
-<p>真实数据回放：存储少量旧任务典型样本（1%~5%），与新数据混合训练<br>
-合成数据回放：用大模型自身生成旧任务的合成数据替代真实数据</p>
-</blockquote>
-<ol start="3" type="1">
-<li>正则化：约束参数更新幅度，保护重要权重不被覆盖</li>
-</ol>
-<blockquote>
-<p>弹性权重巩固（Elastic Weight Consolidation,
-EWC）：计算参数重要性（Fisher信息矩阵），损失函数中惩罚重要参数的大幅度更新</p>
-</blockquote>
-<ol start="4" type="1">
-<li>自我蒸馏（Self-Distillation,
-SDFT）：让微调后的模型模仿初始模型的输出分布，缩小知识差距</li>
-</ol>
-<blockquote>
-<p>训练新任务时，使用旧任务的教师模型输出作为软标签，指导新模型学习</p>
-</blockquote>
-<p><strong>工业实践推荐</strong></p>
-<ul>
-<li>优先 LoRA + 合成回放（如金融报告生成系统）</li>
-<li>高安全场景用 SDFT 蒸馏（如医疗诊断模型）</li>
-<li>动态任务扩展选 Adapter 路由（如多语言翻译引擎）</li>
-</ul>
-<h2 id="测试时扩展test-time-scaling是什么怎么实现">测试时扩展（test-time
-scaling）是什么？怎么实现？</h2>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">测试时扩展（也称测试时计算优化或推理时扩展）是一种在大型模型推理阶段动态分配额外计算资源（如GPU）以提升输出质量的技术</span><br><span class="line"></span><br><span class="line">核心思想：不修改模型参数，仅通过优化推理过程（如多次采样、自我验证、延长思考步骤）来提高模型在复杂任务中的表现，尤其针对需要深度推理的场景（如数学、编程、逻辑分析）</span><br></pre></td></tr></table></figure>
-
-<p>常见的实现方法包括：</p>
-<ul>
-<li>多次采样（外部扩展）：对同一输入进行多次推理，取平均或投票结果</li>
-<li>自我验证（内部扩展）：在推理过程中，模型自身进行验证，并选择最佳的推理结果</li>
-<li>CoT（内部扩展）：模型在推理过程中，通过生成推理步骤，并使用这些步骤来生成推理结果</li>
-<li>延长思考步骤（内部扩展）：在 CoT
-中加入特殊指令（如“Wait“）强制模型延长思考时间，纠正错误思路。
-例如：模型尝试提前输出答案时，追加“Wait“标记使其继续推理，直至达到计算预算上限。</li>
-</ul>
-<h2 id="基于-transformer-架构的大模型在推理时显存主要消耗在哪些方面">基于
-Transformer 架构的大模型在推理时显存主要消耗在哪些方面？</h2>
-<p>推理时显存主要消耗在三个方面：</p>
-<ul>
-<li><strong>模型参数</strong>：占用 2x 模型参数量 GB
-的显存（半精度）</li>
-<li>激活值：Transformer
-模型在推理时需要存储每一层的激活值，通常占用<span class="math inline">\(2 \times bsz \times seqlen \times n_layer \times
-hidden_size\)</span> GB 的显存</li>
-<li>KV-Cache：<span class="math inline">\(\{k_i\}_{i=1}^t\)</span>,
-<span class="math inline">\(\{v_i\}_{i=1}^t\)</span>，因为基于
-Transformer 架构的模型在串行推理时每个时间步的输出<span class="math inline">\(o_t\)</span> ，在计算时需要用到上一步的<span class="math inline">\(k_{t-1}\)</span> 和 <span class="math inline">\(v_{t-1}\)</span>，因此可以在每一步把 <span class="math inline">\(k_i\)</span>和<span class="math inline">\(v_i\)</span>缓存起来，方便下一步使用</li>
-</ul>
-<h2 id="deepseek-r1-训练的四个阶段">Deepseek-R1 训练的四个阶段？</h2>
-<p>DeepSeek-R1
-的训练流程分为四个核心阶段，通过**两轮有监督微调（SFT）<strong>和</strong>两轮强化学习（RL）**的交替优化，逐步提升模型的推理能力、通用性及安全性</p>
-<h3 id="第一阶段冷启动监督微调cold-start-sft">第一阶段：冷启动监督微调（Cold
-Start SFT）：</h3>
-<p>使用数千条人工标注的高质量思维链（CoT）数据，包含多语言对齐的规范格式（如<reasoning>与</reasoning>标签）对基础模型（DeepSeek-V3-Base）进行轻量微调</p>
-<blockquote>
-<p>激发模型遵循人类偏好输出逻辑连贯的推理过程为后续RL提供稳定起点，显著缩短收敛时间并提升可读性</p>
-</blockquote>
-<h3 id="第二阶段面向推理的强化学习reasoning-oriented-rl">第二阶段：面向推理的强化学习（Reasoning-Oriented
-RL）</h3>
-<p>混合奖励函数，包括</p>
-<ul>
-<li>规则奖励：答案正确性（如代码测试通过）、格式规范性</li>
-<li>语言一致性奖励：惩罚中英文混杂，提升目标语言占比</li>
-</ul>
-<p>采用 GRPO 算法，训练至模型在推理任务上收敛（如 AIME 2024 准确率从
-15.6% 提升到 71.0%）</p>
-<blockquote>
-<p>专攻数学、编程、科学等复杂推理任务，优化多步逻辑严谨性。</p>
-</blockquote>
-<h3 id="第三阶段拒绝采样与监督微调rejection-sampling--sft">第三阶段：拒绝采样与监督微调（Rejection
-Sampling &amp; SFT）</h3>
-<ul>
-<li>推理数据：采用拒绝采样方法，从 RL 模型中生成响应，筛选高质量答案（约
-60 万条推理数据）</li>
-<li>通用数据：复用 DeepSeek-V3 的 SFT 数据集（约 20
-万条），覆盖写作、问答、角色扮演等任务</li>
-</ul>
-<p>**两轮监督微调：**第一轮仅使用 60
-万条拒绝采样数据微调模型，第二轮用全部的 80
-万条数据微调模型，平衡推理与非推理能力</p>
-<blockquote>
-<p>扩展多领域能力，解决RL过拟合问题。</p>
-</blockquote>
-<h3 id="第四阶段全场景强化学习rl-for-all-scenarios">第四阶段：全场景强化学习（RL
-for All Scenarios）</h3>
-<p>多样化奖励机制：</p>
-<ul>
-<li>推理任务：沿用规则奖励（如数学答案验证）</li>
-<li>通用任务（如对话、写作）：使用神经奖励模型评估“无害性“和“实用性“</li>
-</ul>
-<p>多提示分布训练：融合用户查询、长文本理解等场景，确保模型适应复杂需求</p>
-<blockquote>
-<p>对齐人类偏好，提升安全性与开放域泛化能力</p>
-</blockquote>
-<h2 id="大模型自适应推理的方法都有哪些分别展开说说">大模型自适应推理的方法都有哪些？分别展开说说</h2>
-<p>自适应推理都是通过大模型的后训练技术来实现的，代表方法如下：</p>
-<h3 id="qwen3阿里">Qwen3（阿里）</h3>
-<blockquote>
-<p>基本思想是<strong>让用户来控制模型是否进行思考以及思考的深度</strong>，而不是模型自适应决定</p>
-</blockquote>
-<ul>
-<li>基础模型：已经经过一轮 SFT + 一轮 RL 微调过的、具有推理能力的 Qwen3
-模型</li>
-<li>对聊天模板进行了改进，在用户输入之后引入特殊 token - /think 和
-/no_think 来控制模型是否进行思考</li>
-<li>有监督训练：混合推理模型自己生成的推理数据和人工收集的无推理数据，然后对推理模型做有监督微调</li>
-</ul>
-<h3 id="adacot字节">AdaCoT（字节）</h3>
-<blockquote>
-<p>基本思想是平衡思考开销和模型性能，即建模帕累托多目标优化问题最大化模型的性能同时最小化
-CoT 思考触发率</p>
-</blockquote>
-<ul>
-<li>基座模型：基础模型（仅预训练），豆包 1.5，15B/150B MoE 架构</li>
-<li>SFT：使用一个 15B 的模型标注哪些数据是复杂问题，构造为
-<code>&lt;think&gt; reasoning_steps &lt;/think&gt; answer</code>
-的形式，以及哪些数据是简单问题，构造为
-<code>&lt;think&gt; &lt;/think&gt; answer</code>
-的形式，然后对模型做有监督训练（预热训练）</li>
-<li>RL：
-<ul>
-<li>奖励函数：四方面评分加权求和，分别是回答质量分数，推理遗漏惩罚（0 或
--1），思考过度惩罚（0 或 -1），以及格式惩罚（0 或 -1）</li>
-<li>训练过程：使用 PPO 强化学习算法，计算损失时不计算
-<code>&lt;think&gt;</code> 之后第一个 token（决策
-token）的损失，该方法叫做<strong>选择性损失掩模</strong>（Selective Loss
-Masking，SLM）</li>
-</ul></li>
-</ul>
-<h3 id="adaptthink清华">AdaptThink（清华）：</h3>
-<blockquote>
-<p>基本思路也是训练模型根据问题的难度选择是否思考，实现的方法主要是约束优化和重要性采样</p>
-<ul>
-<li>约束优化是说模型在不做思考的情况下响应的质量不能比思考后响应的质量差</li>
-<li>重要性采样是指因为参考模型是个推理大模型，他不可能不输出思考过程，因此对响应
-y （输入为 x + <code>&lt;think&gt;</code>）的第一个 token，以 50%
-的概率将其替换为 <code>&lt;/think&gt;</code></li>
-</ul>
-</blockquote>
-<h2 id="ppo-和-dpo-的主要思想是什么dpo-相比-ppo-的-rlhf-做了哪些改进">PPO 和
-DPO 的主要思想是什么，DPO 相比 PPO 的 RLHF 做了哪些改进？</h2>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">- PPO 算法的核心思想是在约束策略更新幅度的前提下最大化奖励</span><br><span class="line">- DPO 的核心思想是将强化学习转化为偏好分类问题</span><br></pre></td></tr></table></figure>
-
-<p>DPO 相比 PPO-RLHF 实现了四大改进：</p>
-<ul>
-<li><p>训练流程简化（消除强化学习循环）：</p>
-<ul>
-<li>PPO
-需要四个模型：策略模型（Actor）、参考模型（Reference）、奖励模型（Reward
-Model）、价值网络（Critic，用于计算优势函数）</li>
-<li>DPO 只需要两个模型：策略模型和参考模型。</li>
-<li>DPO 将 PPO
-的迭代采样-&gt;评分-&gt;参数更新简化为单阶段的有监督训练</li>
-</ul></li>
-<li><p>数值稳定性提升：</p>
-<ul>
-<li>PPO 的奖励尺度需精细校准（<span class="math inline">\(1-\epsilon\)</span>和<span class="math inline">\(1+\epsilon\)</span>进行裁剪），否则导致梯度爆炸，并且需要动态调整
-KL 惩罚系数<span class="math inline">\(\beta\)</span></li>
-<li>而 DPO 的损失函数中由<span class="math inline">\(\sigma(\cdot)\)</span>自动将输出范围约束到[0,1]，此外，还通过偏好概率比避免绝对值计算</li>
-</ul></li>
-<li><p>数据效率优化：PPO 的迭代训练需要将同批次数据复用 20~50 次，而 DPO
-只需一次训练</p></li>
-<li><p>训练速度提升：同数据集、同硬件条件下，PPO-RLHF 的收敛速度是 DPO
-的 ~10 倍，PPO-RLHF 的单步训练耗时是 DPO 的 ~4.5 倍，因此，DPO
-的训练速度相比 PPO 提升 ~45 倍</p></li>
-</ul>
-<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
-]]></content>
-      <categories>
-        <category>LLMs</category>
-        <category>Transformers</category>
-      </categories>
-      <tags>
-        <tag>LLMs</tag>
-        <tag>Transformers</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>一些面试题集合-1</title>
     <url>/p/4d14af89.html</url>
     <content><![CDATA[<p><a href="https://spaces.ac.cn/archives/9529">苏剑林｜为什么现在的LLM都是Decoder-only的架构？</a>
@@ -2412,6 +2127,291 @@ KL 惩罚系数<span class="math inline">\(\beta\)</span></li>
         <tag>LLMs</tag>
         <tag>Transformers</tag>
         <tag>面试题集</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>为什么现在的LLM都是Decoder-only的架构</title>
+    <url>/p/b8631c21.html</url>
+    <content><![CDATA[<p><a href="https://spaces.ac.cn/archives/9529">苏剑林｜为什么现在的LLM都是Decoder-only的架构？</a>
+<a href="https://www.zhihu.com/question/588325646">为什么现在的LLM都是Decoder
+only的架构？</a> <a href="https://spaces.ac.cn/archives/9547">苏剑林｜《为什么现在的LLM都是Decoder-only的架构？》FAQ</a></p>
+<h2 id="为什么现在-decoder-only-成为大模型的主流架构相比于-encoder-decoder-的架构好在哪里">为什么现在
+Decoder-only 成为大模型的主流架构，相比于 Encoder-Decoder
+的架构好在哪里？</h2>
+<p>主要有三方面的原因，包括工程实现、计算效率、以及任务适配度</p>
+<ol type="1">
+<li><strong>工程实现优势</strong></li>
+</ol>
+<p>Decoder-only 简化了 Transformer 的工程实现，仅需要实现 Masked
+Attention 机制，无需考虑无 Mask 的 Attention，以及 Cross-Attention
+的复杂性</p>
+<ol start="2" type="1">
+<li><strong>计算效率优势</strong></li>
+</ol>
+<p><strong>节省参数</strong>：在同等深度（层数）设定下，并且假设超参数设置相同（如头数、隐层维数），Decoder-only
+的参数量是 Encoder-Decoder 的一半</p>
+<p><strong>节省算力</strong>：Encoder-Decoder 架构的 Encoder
+部分采用无掩模的注意力机制，只有 Decoder 部分采用 Masked
+Attention，Masked Attention 计算量是无掩模 Attention 的一半</p>
+<p><strong>推理加速</strong>：在推理阶段，Decoder-only 可以利用 KV-Cache
+复用机制，显著降低多轮对话的延迟，而 Encoder-Decoder
+则需要重新计算编码器输出，缓存效率较低（这个问题在多轮对话场景中尤为突出）</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>Decoder-only</th>
+<th>Encoder-Decoder</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练成本</td>
+<td>一次前向计算，无编码-解码交互</td>
+<td>编码器+解码器双重计算，耗时更长</td>
+</tr>
+<tr>
+<td>推理延迟</td>
+<td>支持 KV-Cache 复用，多轮对话延迟降低 30%</td>
+<td>需重新计算编码器输出，缓存效率低</td>
+</tr>
+<tr>
+<td>参数量化</td>
+<td>同等效果下参数利用率更高（如 LLaMA-13B 性能近似于 T5-11B）</td>
+<td>需两倍参数达到相近效果</td>
+</tr>
+</tbody>
+</table>
+<ol start="3" type="1">
+<li><strong>任务适配度优势</strong></li>
+</ol>
+<p>CLM
+（因果语言建模）预训练目标在文本生成方面的先进性，已经被广泛证明，Decoder-only
+天然适配 CLM，并且进一步方便了 Prompting、In-Context Learning 的实现</p>
+<ol start="4" type="1">
+<li><strong>理论：双向注意力存在低秩问题</strong></li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">理论上是因为Encoder的双向注意力会存在低秩问题，这可能会削弱模型表达能力，就生成任务而言，引入双向注意力并无实质好处。而Encoder-Decoder架构之所以能够在某些场景下表现更好，大概只是因为它多了一倍参数。所以，在同等参数量、同等推理成本下，Decoder-only架构就是最优选择了。</span><br></pre></td></tr></table></figure>
+
+<p>Attention矩阵一般是由一个低秩分解的矩阵加softmax而来，具体来说是一个<span class="math inline">\(n×d\)</span>的矩阵与<span class="math inline">\(d×n\)</span>的矩阵相乘后再加softmax（n≫d），这种形式的Attention的矩阵会因为低秩问题而带来表达能力的下降，具体分析参考<a href="https://arxiv.org/pdf/2103.03404">《Attention is Not All You Need:
+Pure Attention Loses Rank Doubly Exponentially with Depth》</a></p>
+<p>对于Decoder-only架构的Attention矩阵是一个<strong>下三角阵</strong>，注意三角阵的行列式等于它对角线元素之积，<strong>由于softmax的存在，对角线必然都是正数，所以它的行列式必然是正数，即Decoder-only架构的Attention矩阵一定是满秩的！</strong></p>
+<blockquote>
+<p>满秩意味着理论上有更强的表达能力，也就是说，Decoder-only架构的Attention矩阵在理论上具有更强的表达能力，改为双向注意力反而会变得不足</p>
+</blockquote>
+<p>还有个间接支持这一观点的现象，那就是:</p>
+<blockquote>
+<p>线性Attention在语言模型任务上（单向注意力）与标准Attention的差距，小于它在MLM任务上（双向注意力）与标准Attention的差距，也就是说，<strong>线性Attention在双向注意力任务上的效果相对更差</strong>。这是因为线性Attention在做语言模型任务时，它的Attention矩阵跟标准Attention一样都是满秩的下三角阵；在做MLM任务时，线性Attention矩阵的秩比标准Attention矩阵更低（线性Attention是<span class="math inline">\(n×d\)</span>的矩阵与<span class="math inline">\(d×n\)</span>的矩阵相乘，秩一定不超过d，标准Attention是<span class="math inline">\(n×d\)</span>的矩阵与<span class="math inline">\(d×n\)</span>的矩阵相乘后加softmax，softmax会有一定的升秩作用）</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">实验证明，在语言建模类任务（文本生成、故事创作、代码补全）中，Decoder-only 的困惑度（PPL）显著低于 Encoder-Decoder。 而类似 T5 这样 Encoder-Decoder 架构的 Transformer 在各种 Seq2Seq 任务（如机器翻译、文本摘要、代码生成等）中表现优秀。虽在翻译任务表现优异，但因参数量翻倍（11B T5≈5.5B GPT），公平比较下无优势</span><br></pre></td></tr></table></figure>
+
+<h2 id="decoder-only-架构的注意力矩阵为什么是满秩的满秩注意力矩阵有什么优势">Decoder-only
+架构的注意力矩阵为什么是满秩的？满秩注意力矩阵有什么优势？</h2>
+<p>Decoder-only 架构的核心是因果注意力（Causal
+Attention），其注意力矩阵是严格的下三角矩阵，因为三角矩阵的行列式 =
+对角线元素之积，又 Softmax
+保证了注意力矩阵中所有元素均为正，因此对角线元素也均为正 -&gt;
+行列式恒为正 -&gt; 矩阵满秩</p>
+<p>满秩注意力矩阵的优势包括：</p>
+<ul>
+<li><strong>完全的位置关系建模</strong>：满秩矩阵的行/列向量线性无关，能精确表示序列中任意位置的依赖关系</li>
+<li><strong>更大的模型容量</strong>：注意力矩阵中没有冗余参数（因为行/列向量线性无关，彼此无法线性表示），能够更好地利用参数空间，提升模型的表达能力</li>
+<li><strong>工程实践优势</strong>：相比与 Encoder-Decoder
+模型，Decoder-only 的泛化能力更强（GPT 的 Zero-shot 能力强于
+T5），微调时收敛更快</li>
+</ul>
+<h2 id="大模型的灾难性遗忘问题是什么怎么解決">大模型的灾难性遗忘问题是什么？怎么解決？</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">大模型的灾难性遗忘（Catastrophic Forgetting）是指模型在适应新任务或新数据时，对先前学到的知识出现大面积遗忘，导致其在旧任务上的性能急剧下降的现象，宏观表现为大模型微调后&quot;变傻了&quot;</span><br></pre></td></tr></table></figure>
+
+<p><strong>原因</strong>：造成灾难性遗忘的根本原因是由于在训练（微调）过程中反向传播优化新任务损失时，全局权重更新会破坏旧任务对应的参数模式</p>
+<p><strong>解决方案</strong>：</p>
+<ol type="1">
+<li>参数（结构）隔离：为不同任务分配独立参数路径，避免共享参数的冲突更新</li>
+</ol>
+<blockquote>
+<p>代表方法：Adapter/LoRA
+模块化扩展，冻结原模型参数，插入轻量级可训练模块（如AdapterLoRA），仅更新新增参数</p>
+</blockquote>
+<ol start="2" type="1">
+<li>数据回放：混合新旧任务数据训练，强制模型同时记忆历史与当前知识</li>
+</ol>
+<blockquote>
+<p>真实数据回放：存储少量旧任务典型样本（1%~5%），与新数据混合训练<br>
+合成数据回放：用大模型自身生成旧任务的合成数据替代真实数据</p>
+</blockquote>
+<ol start="3" type="1">
+<li>正则化：约束参数更新幅度，保护重要权重不被覆盖</li>
+</ol>
+<blockquote>
+<p>弹性权重巩固（Elastic Weight Consolidation,
+EWC）：计算参数重要性（Fisher信息矩阵），损失函数中惩罚重要参数的大幅度更新</p>
+</blockquote>
+<ol start="4" type="1">
+<li>自我蒸馏（Self-Distillation,
+SDFT）：让微调后的模型模仿初始模型的输出分布，缩小知识差距</li>
+</ol>
+<blockquote>
+<p>训练新任务时，使用旧任务的教师模型输出作为软标签，指导新模型学习</p>
+</blockquote>
+<p><strong>工业实践推荐</strong></p>
+<ul>
+<li>优先 LoRA + 合成回放（如金融报告生成系统）</li>
+<li>高安全场景用 SDFT 蒸馏（如医疗诊断模型）</li>
+<li>动态任务扩展选 Adapter 路由（如多语言翻译引擎）</li>
+</ul>
+<h2 id="测试时扩展test-time-scaling是什么怎么实现">测试时扩展（test-time
+scaling）是什么？怎么实现？</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">测试时扩展（也称测试时计算优化或推理时扩展）是一种在大型模型推理阶段动态分配额外计算资源（如GPU）以提升输出质量的技术</span><br><span class="line"></span><br><span class="line">核心思想：不修改模型参数，仅通过优化推理过程（如多次采样、自我验证、延长思考步骤）来提高模型在复杂任务中的表现，尤其针对需要深度推理的场景（如数学、编程、逻辑分析）</span><br></pre></td></tr></table></figure>
+
+<p>常见的实现方法包括：</p>
+<ul>
+<li>多次采样（外部扩展）：对同一输入进行多次推理，取平均或投票结果</li>
+<li>自我验证（内部扩展）：在推理过程中，模型自身进行验证，并选择最佳的推理结果</li>
+<li>CoT（内部扩展）：模型在推理过程中，通过生成推理步骤，并使用这些步骤来生成推理结果</li>
+<li>延长思考步骤（内部扩展）：在 CoT
+中加入特殊指令（如“Wait“）强制模型延长思考时间，纠正错误思路。
+例如：模型尝试提前输出答案时，追加“Wait“标记使其继续推理，直至达到计算预算上限。</li>
+</ul>
+<h2 id="基于-transformer-架构的大模型在推理时显存主要消耗在哪些方面">基于
+Transformer 架构的大模型在推理时显存主要消耗在哪些方面？</h2>
+<p>推理时显存主要消耗在三个方面：</p>
+<ul>
+<li><strong>模型参数</strong>：占用 2x 模型参数量 GB
+的显存（半精度）</li>
+<li>激活值：Transformer
+模型在推理时需要存储每一层的激活值，通常占用<span class="math inline">\(2 \times bsz \times seqlen \times n_layer \times
+hidden_size\)</span> GB 的显存</li>
+<li>KV-Cache：<span class="math inline">\(\{k_i\}_{i=1}^t\)</span>,
+<span class="math inline">\(\{v_i\}_{i=1}^t\)</span>，因为基于
+Transformer 架构的模型在串行推理时每个时间步的输出<span class="math inline">\(o_t\)</span> ，在计算时需要用到上一步的<span class="math inline">\(k_{t-1}\)</span> 和 <span class="math inline">\(v_{t-1}\)</span>，因此可以在每一步把 <span class="math inline">\(k_i\)</span>和<span class="math inline">\(v_i\)</span>缓存起来，方便下一步使用</li>
+</ul>
+<h2 id="deepseek-r1-训练的四个阶段">Deepseek-R1 训练的四个阶段？</h2>
+<p>DeepSeek-R1
+的训练流程分为四个核心阶段，通过**两轮有监督微调（SFT）<strong>和</strong>两轮强化学习（RL）**的交替优化，逐步提升模型的推理能力、通用性及安全性</p>
+<h3 id="第一阶段冷启动监督微调cold-start-sft">第一阶段：冷启动监督微调（Cold
+Start SFT）：</h3>
+<p>使用数千条人工标注的高质量思维链（CoT）数据，包含多语言对齐的规范格式（如<reasoning>与</reasoning>标签）对基础模型（DeepSeek-V3-Base）进行轻量微调</p>
+<blockquote>
+<p>激发模型遵循人类偏好输出逻辑连贯的推理过程为后续RL提供稳定起点，显著缩短收敛时间并提升可读性</p>
+</blockquote>
+<h3 id="第二阶段面向推理的强化学习reasoning-oriented-rl">第二阶段：面向推理的强化学习（Reasoning-Oriented
+RL）</h3>
+<p>混合奖励函数，包括</p>
+<ul>
+<li>规则奖励：答案正确性（如代码测试通过）、格式规范性</li>
+<li>语言一致性奖励：惩罚中英文混杂，提升目标语言占比</li>
+</ul>
+<p>采用 GRPO 算法，训练至模型在推理任务上收敛（如 AIME 2024 准确率从
+15.6% 提升到 71.0%）</p>
+<blockquote>
+<p>专攻数学、编程、科学等复杂推理任务，优化多步逻辑严谨性。</p>
+</blockquote>
+<h3 id="第三阶段拒绝采样与监督微调rejection-sampling--sft">第三阶段：拒绝采样与监督微调（Rejection
+Sampling &amp; SFT）</h3>
+<ul>
+<li>推理数据：采用拒绝采样方法，从 RL 模型中生成响应，筛选高质量答案（约
+60 万条推理数据）</li>
+<li>通用数据：复用 DeepSeek-V3 的 SFT 数据集（约 20
+万条），覆盖写作、问答、角色扮演等任务</li>
+</ul>
+<p>**两轮监督微调：**第一轮仅使用 60
+万条拒绝采样数据微调模型，第二轮用全部的 80
+万条数据微调模型，平衡推理与非推理能力</p>
+<blockquote>
+<p>扩展多领域能力，解决RL过拟合问题。</p>
+</blockquote>
+<h3 id="第四阶段全场景强化学习rl-for-all-scenarios">第四阶段：全场景强化学习（RL
+for All Scenarios）</h3>
+<p>多样化奖励机制：</p>
+<ul>
+<li>推理任务：沿用规则奖励（如数学答案验证）</li>
+<li>通用任务（如对话、写作）：使用神经奖励模型评估“无害性“和“实用性“</li>
+</ul>
+<p>多提示分布训练：融合用户查询、长文本理解等场景，确保模型适应复杂需求</p>
+<blockquote>
+<p>对齐人类偏好，提升安全性与开放域泛化能力</p>
+</blockquote>
+<h2 id="大模型自适应推理的方法都有哪些分别展开说说">大模型自适应推理的方法都有哪些？分别展开说说</h2>
+<p>自适应推理都是通过大模型的后训练技术来实现的，代表方法如下：</p>
+<h3 id="qwen3阿里">Qwen3（阿里）</h3>
+<blockquote>
+<p>基本思想是<strong>让用户来控制模型是否进行思考以及思考的深度</strong>，而不是模型自适应决定</p>
+</blockquote>
+<ul>
+<li>基础模型：已经经过一轮 SFT + 一轮 RL 微调过的、具有推理能力的 Qwen3
+模型</li>
+<li>对聊天模板进行了改进，在用户输入之后引入特殊 token - /think 和
+/no_think 来控制模型是否进行思考</li>
+<li>有监督训练：混合推理模型自己生成的推理数据和人工收集的无推理数据，然后对推理模型做有监督微调</li>
+</ul>
+<h3 id="adacot字节">AdaCoT（字节）</h3>
+<blockquote>
+<p>基本思想是平衡思考开销和模型性能，即建模帕累托多目标优化问题最大化模型的性能同时最小化
+CoT 思考触发率</p>
+</blockquote>
+<ul>
+<li>基座模型：基础模型（仅预训练），豆包 1.5，15B/150B MoE 架构</li>
+<li>SFT：使用一个 15B 的模型标注哪些数据是复杂问题，构造为
+<code>&lt;think&gt; reasoning_steps &lt;/think&gt; answer</code>
+的形式，以及哪些数据是简单问题，构造为
+<code>&lt;think&gt; &lt;/think&gt; answer</code>
+的形式，然后对模型做有监督训练（预热训练）</li>
+<li>RL：
+<ul>
+<li>奖励函数：四方面评分加权求和，分别是回答质量分数，推理遗漏惩罚（0 或
+-1），思考过度惩罚（0 或 -1），以及格式惩罚（0 或 -1）</li>
+<li>训练过程：使用 PPO 强化学习算法，计算损失时不计算
+<code>&lt;think&gt;</code> 之后第一个 token（决策
+token）的损失，该方法叫做<strong>选择性损失掩模</strong>（Selective Loss
+Masking，SLM）</li>
+</ul></li>
+</ul>
+<h3 id="adaptthink清华">AdaptThink（清华）：</h3>
+<blockquote>
+<p>基本思路也是训练模型根据问题的难度选择是否思考，实现的方法主要是约束优化和重要性采样</p>
+<ul>
+<li>约束优化是说模型在不做思考的情况下响应的质量不能比思考后响应的质量差</li>
+<li>重要性采样是指因为参考模型是个推理大模型，他不可能不输出思考过程，因此对响应
+y （输入为 x + <code>&lt;think&gt;</code>）的第一个 token，以 50%
+的概率将其替换为 <code>&lt;/think&gt;</code></li>
+</ul>
+</blockquote>
+<h2 id="ppo-和-dpo-的主要思想是什么dpo-相比-ppo-的-rlhf-做了哪些改进">PPO 和
+DPO 的主要思想是什么，DPO 相比 PPO 的 RLHF 做了哪些改进？</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">- PPO 算法的核心思想是在约束策略更新幅度的前提下最大化奖励</span><br><span class="line">- DPO 的核心思想是将强化学习转化为偏好分类问题</span><br></pre></td></tr></table></figure>
+
+<p>DPO 相比 PPO-RLHF 实现了四大改进：</p>
+<ul>
+<li><p>训练流程简化（消除强化学习循环）：</p>
+<ul>
+<li>PPO
+需要四个模型：策略模型（Actor）、参考模型（Reference）、奖励模型（Reward
+Model）、价值网络（Critic，用于计算优势函数）</li>
+<li>DPO 只需要两个模型：策略模型和参考模型。</li>
+<li>DPO 将 PPO
+的迭代采样-&gt;评分-&gt;参数更新简化为单阶段的有监督训练</li>
+</ul></li>
+<li><p>数值稳定性提升：</p>
+<ul>
+<li>PPO 的奖励尺度需精细校准（<span class="math inline">\(1-\epsilon\)</span>和<span class="math inline">\(1+\epsilon\)</span>进行裁剪），否则导致梯度爆炸，并且需要动态调整
+KL 惩罚系数<span class="math inline">\(\beta\)</span></li>
+<li>而 DPO 的损失函数中由<span class="math inline">\(\sigma(\cdot)\)</span>自动将输出范围约束到[0,1]，此外，还通过偏好概率比避免绝对值计算</li>
+</ul></li>
+<li><p>数据效率优化：PPO 的迭代训练需要将同批次数据复用 20~50 次，而 DPO
+只需一次训练</p></li>
+<li><p>训练速度提升：同数据集、同硬件条件下，PPO-RLHF 的收敛速度是 DPO
+的 ~10 倍，PPO-RLHF 的单步训练耗时是 DPO 的 ~4.5 倍，因此，DPO
+的训练速度相比 PPO 提升 ~45 倍</p></li>
+</ul>
+<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>Transformers</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>Transformers</tag>
       </tags>
   </entry>
   <entry>
@@ -2734,6 +2734,519 @@ tying 的解释</a></p>
       <tags>
         <tag>LLMs</tag>
         <tag>Transformers</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>强化学习（一）：PPO、DPO梳理</title>
+    <url>/p/6ad6791a.html</url>
+    <content><![CDATA[<h2 id="强化学习相关概念">强化学习相关概念</h2>
+<p><strong>强化学习：</strong></p>
+<p>智能体（Agent）通过与环境（Evoriment）交互，决定采取的动作（Action），从试错中获得奖励或惩罚（Reward），从而学习最优策略（Policy）。它的核心目标是<strong>最大化长期累计回报</strong>，使智能体在未知环境中做出最优决策。
+<img src="/p/6ad6791a/强化学习过程.png"></p>
+<p><strong>Q / V值：</strong></p>
+<blockquote>
+<p><a href="https://mp.weixin.qq.com/s/WptWT0GGqml-l3xhClMNyg">LLM强化学习算法演进之路：Q-Learning-&gt;DQN-&gt;PPO-&gt;DPO等</a></p>
+</blockquote>
+<ul>
+<li>Q值：代表智能体选择某个动作后，⼀直到最终状态奖励总和的期望，Q值评价动作</li>
+<li>V值：代表智能体在这个状态下，⼀直到最终状态的奖励总和的期望，V值评价状态</li>
+</ul>
+<p><img src="/p/6ad6791a/强化学习中的QV转换.png"></p>
+<p>如何在不知道真实环境分布的情况下估算V值，大体归纳为基于价值、基于策略两种方法：</p>
+<ul>
+<li>基于价值的方法：MC（Monte-Carlo，蒙特卡洛）方法、TD（Temporal-Difference，时序差分），基于TD的变体包括SARSA、Q-learning、DQN）</li>
+<li>基于策略的方法：PG（Policy Gradient，策略梯度）、AC、PPO（Proximal
+Policy Optimization，近端策略优化）</li>
+</ul>
+<p><strong>两种策略</strong></p>
+<ul>
+<li>行为策略：不是当前策略，用于产出数据</li>
+<li>目标策略：会更新的策略，是需要被优化的策略
+如果两个策略是同一个策略，那么称为<code>On Policy</code>；如果不是同一个策略，那么称为<code>Off Policy</code></li>
+</ul>
+<p><strong>重要性采样（Important-sampling）</strong></p>
+<ul>
+<li>目标：用行为策略获取的数据，能够更新目标策略，把AC从在线策略，变成离线策略。</li>
+<li>含义：<span class="math inline">\(\frac{目标策略出现动作a的概率}{行为策略出现a的概率}\)</span></li>
+</ul>
+<p><strong>On-Policy与Off-Policy</strong></p>
+<blockquote>
+<p><a href="https://mp.weixin.qq.com/s/am_ulGA18klm6T5KEuAI7w">别再二选一了！一文看懂On-Policy与Off-Policy的本质分歧（含GRPO深度拆解</a></p>
+</blockquote>
+<mark class="hl-label red">On-Policy：行为策略（生成数据）和目标策略（学习策略）相同</mark>
+
+<p>强调现学现用：你只能根据你当前行为策略做出的决策来学习。也就是说，你走路摔了跤，那就根据你自己的经验总结教训；别人的教训你学不了。<br>
+代表算法：SARSA（State-Action-Reward-State-Action）、PPO（Proximal
+Policy Optimization）</p>
+<p>特点：</p>
+<ul>
+<li>数据和策略紧耦合，稳定但样本利用率较低</li>
+<li>策略收敛稳定，适合动态调整策略的情境</li>
+</ul>
+<mark class="hl-label red">Off-Policy：行为策略与目标策略不同，可以使用来自其他策略生成的数据</mark>
+
+<p>允许站在前人肩膀上学习：你不一定非要亲身经历一切，也可以观察别人是怎么做的，并据此调整自己的策略。</p>
+<p>代表算法：Q-learning、DQN（Deep Q-Network）、DDPG / TD3 /
+SAC（深度强化学习中的 Actor-Critic）</p>
+<p>特点：</p>
+<ul>
+<li>数据可以反复使用，样本利用率高</li>
+<li>训练灵活，可以分离采样与训练过程</li>
+<li>但更容易产生偏差或不稳定（策略不一致）</li>
+</ul>
+<h2 id="rlhf">RLHF</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RLHF的思想非常简单，其核心就是一句话——让大模型“学会做出人类喜欢的回答”</span><br></pre></td></tr></table></figure>
+
+<p><strong>目标问题：</strong>
+大模型生成的文本可能准确但不合人类偏好，比如礼貌性差、信息冗余或有偏见。<br>
+<strong>解决思路：</strong> 通过强化学习，让模型输出符合人类评估（human
+preference）或规则奖励（reward function）的回复。<br>
+<strong>核心技术：</strong> RLHF = 模型训练 + 人类反馈（或代理奖励） +
+强化学习优化。</p>
+<p><img src="/p/6ad6791a/the_development_process_for_ChatGPT.png"></p>
+<mark class="hl-label red">为什么需要RLHF？</mark>
+
+<p>即使有了Pre-train和SFT，模型仍存在以下问题：</p>
+<ul>
+<li><strong>SFT存在局限性：</strong>
+依赖有限的标注数据，难以覆盖复杂场景。模型可能学会“模仿标注数据”，但无法理解深层次的人类偏好。</li>
+<li><strong>人类偏好的主观性：</strong>
+许多目标（如“友好”“无害”）难以用损失函数直接定义，但可以通过人类反馈间接学习。</li>
+<li><strong>输出质量的动态优化：</strong>
+RLHF能通过强化学习的奖励机制（Reward
+Model）对模型输出进行细粒度调整（例如选择更简洁或更详细的回答）。</li>
+</ul>
+<p>TRPO和 PPO 的作者John Schulman，在 2023年的<a href="https://www.bilibili.com/video/BV1Ao4y187GD/?spm_id_from=333.337.search-card.all.click">《Reinforcement
+Learning from Human Feedback: Progress and
+Challenges》</a>讲座中，引用了 Yoav Goldberg
+的三个假设来回答这个问题</p>
+<ul>
+<li><strong>多样性假设：</strong>
+在监督微调（SFT）过程中，模型的输出被期望在某种程度上与样本中的回答相匹配，但是同一个问题可能有多个答案的。例如，给定提示“给出一个语言的例子？“，如果样本中的回答是“西班牙语“而模型的回答是“Java”，那么模型的回答可能会被标记为错误</li>
+<li><strong>负反馈假设：</strong>
+样本只给模型提供正向信号（只向模型展示好的回答），而不提供负向信号（没有给模型展示坏回答的样子）。强化学习允许我们向模型展示负向信号</li>
+<li><strong>幻觉假设：</strong><br>
+John Schulman 认为，SFT
+只是让模型学会了问题的模式和回答方式，并没有学到新的知识。如果问题超出了大模型的知识范围，大模型就会按照学习到的回答方式瞎编一个，这就产生了幻觉。<br>
+尽管我们可以在 SFT
+的样本里加入<code>我不知道</code>这样的样本，模型可以学习到这样的回答方式。但是问题是，我们不太能确定这个知识大模型到底知道不知道，如果大模型知道强行让他说不知道，同样也有可能导致幻觉。<br>
+使用 Off Policy 的数据进行训练，其实和 SFT 也有类似的问题，Off Policy
+的数据包含的知识，也不太好确定模型知不知道。而 RLHF
+提供了一种可能性，通过偏好数据，引导模型回答自己力所能及的问题，而不是瞎编</li>
+</ul>
+<h3 id="rlhf-ppoproximal-policy-optimization近端策略优化">RLHF-PPO（Proximal
+Policy Optimization，近端策略优化）</h3>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/1707.06347">Proximal Policy
+Optimization Algorithms</a></p>
+</blockquote>
+<p><img src="/p/6ad6791a/PPO算法.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">核心思想：直接通过梯度优化生成策略，使期望奖励最大化，同时限制策略更新幅度，保证输出稳定性。</span><br></pre></td></tr></table></figure>
+
+<p>PPO训练时总共需要4个模型：</p>
+<ul>
+<li><strong>要训练的模型(Actor Model, <span class="math inline">\(\pi_{\theta}\)</span>)：</strong>
+最终要得到的模型，其<strong>参数在训练过程中会被更新</strong></li>
+<li><strong>参考模型(Reference Model, <span class="math inline">\(\pi_{base}\)</span>)：</strong> Actor
+Model经过监督微调（SFT）后的版本，<strong>参数始终保持冻结</strong>。在训练过程中作为约束模型使用(计算
+KL 惩罚)，防止策略偏离太远</li>
+<li><strong>奖励模型(Reward Model, <span class="math inline">\(r\)</span>)：</strong>
+对生成的输出打分，表示人类偏好或质量高低。</li>
+</ul>
+<!-- ![](RewardModel训练过程.png) -->
+
+<ul>
+<li><strong>价值模型(Value Model/Critic Model, <span class="math inline">\(V\)</span>)：</strong>
+输入与LLM一致，是当前的”状态”，即prompt（有时也包括已生成的部分tokens），其任务是评估从该状态开始所能获得的期望总回报。<strong>该模型在训练过程中更新参数</strong>。与Reward
+Model的区别在于，Critic
+Model预测的是状态价值函数V(s)，即从当前状态开始到回合结束的期望总回报（含未来奖励），而Reward
+Model给出的是生成当前response所获得的即时奖励</li>
+</ul>
+<div align="center">
+    <img src="/p/6ad6791a/PPO算法2.png" width="100%"> 
+</div>
+
+<mark class="hl-label red">PPO有两种策略：PPO-CLIP和PPO-KL</mark>  
+
+<h4 id="ppo-kl">PPO-KL</h4>
+<ol type="1">
+<li><p>输入提示 <span class="math inline">\(x\)</span> 到原始模型 <span class="math inline">\(\pi_{base}\)</span> （旧策略）和当前微调的模型
+<span class="math inline">\(\pi_\theta\)</span> （新策略）。得到生成序列
+<span class="math display">\[y_{base}\sim \pi_{base}(\cdot|x), y\sim
+\pi_\theta(\cdot|x)\]</span></p></li>
+<li><p>计算奖励分数，将微调模型生成的文本 <span class="math inline">\(y\)</span> 送入RM，得到奖励分数 <span class="math inline">\(r_\theta(x,y)\)</span></p></li>
+<li><p>价值模型预测 <span class="math inline">\(V(x)\)</span>，计算优势
+<span class="math inline">\(A=r-V(x)\)</span>。价值模型类似“参考线”，用来判断模型这次表现比平时好多少或差多少，从而帮
+PPO 决定该奖励多少、惩罚多少，让训练更稳定</p></li>
+<li><p>引入KL 惩罚项，为防止策略过度偏离初始模型，计算 KL 散度</p></li>
+</ol>
+<p>PPO-KL的目标函数： <span class="math display">\[L^{PPO-KL}(\theta)=\mathbb{E}_t\left[\frac{\pi_\theta(a_t|s_t)}{\pi_{base}(a_t|s_t)}A_t-\beta
+D_{KL}(\pi_{base}(\cdot|s_t)||\pi_\theta(\cdot|s_t))\right]\]</span></p>
+<hr>
+<p><strong>+ 重要性采样⽐率 (importance sampling ratio)</strong></p>
+<ul>
+<li><span class="math inline">\(\pi_\theta(a_t|s_t)\)</span>：新策略在状态<span class="math inline">\(s_t\)</span>下选择动作<span class="math inline">\(a_t\)</span>的概率。<span class="math inline">\(\theta\)</span>是要优化的参数</li>
+<li><span class="math inline">\(\pi_{base}(a_t|s_t)\)</span>：旧策略在状态<span class="math inline">\(s_t\)</span>下选择动作<span class="math inline">\(a_t\)</span>的概率</li>
+</ul>
+<blockquote>
+<p>对LLM（⼤语⾔模型）来说，状态<span class="math inline">\(s_t\)</span>通常对应(⽬前为⽌)⽣成的上下⽂。动作<span class="math inline">\(a_t\)</span>对应于在下⼀步⽣成的token。</p>
+</blockquote>
+<p><span class="math inline">\(r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{base}(a_t|s_t)}\)</span>叫作<strong>重要性采样⽐率
+(importance sampling
+ratio)</strong>，⽤来衡量“新策略和旧策略对同⼀动作概率的变化幅度”</p>
+<p><strong>+ 优势函数（Advantage Function）</strong><br>
+在 PPO 中，使用价值模型（Value
+Model）预测状态的平均预期奖励，⽤来计算优势函数，帮助策略更新更稳定
+<span class="math display">\[A(s_t,a_t)=Q(s_t,a_t)-V(s_t)\]</span>
+表示在状态<span class="math inline">\(s_t\)</span>选择动作<span class="math inline">\(a_t\)</span>相对于平均⽔平（状态价值<span class="math inline">\(V\)</span>）到底好多少</p>
+<blockquote>
+<p><span class="math inline">\(Q(s_t,a_t)\)</span>是动作<span class="math inline">\(a_t\)</span>在状态<span class="math inline">\(s_t\)</span>下的期望总奖励，可以⽤奖励模型（RM）输出的分数<span class="math inline">\(r\)</span>来近似。<span class="math inline">\(V(s_t)\)</span>是状态基线，⽤来降低梯度⽅差</p>
+</blockquote>
+<blockquote>
+<p>在语言模型场景中：<br>
+<span class="math inline">\(Q(s_t,a_t)\approx r(s_t,a_t)+\gamma
+r(s_{t+1},a_{t+1})+\gamma^2 r(s_{t+2},a_{t+2})+...\)</span></p>
+<p><span class="math inline">\(\gamma\)</span> -
+折扣因子，就像买股票一样，同样一块钱，当前的一块钱比未来期望的一块钱更具有价值。因此在强化学习中，对未来的奖励需要进行一定的折扣</p>
+<p><span class="math inline">\(A_t\)</span>是用RM的奖励分数<span class="math inline">\(r\)</span>计算出的<span class="math inline">\(Q(s_t,a_t)\)</span>减去值函数基线<span class="math inline">\(V(s_t)\)</span>并通过广义优势估计（GAE）平滑得到</p>
+</blockquote>
+<ul>
+<li><span class="math inline">\(A_t&gt;0\)</span>：说明这个动作比平均策略好，应该增加其概率</li>
+<li><span class="math inline">\(A_t&lt;0\)</span>：说明这个动作比较差，应该降低其概率</li>
+</ul>
+<p><span class="math inline">\(r_t(\theta)A_t\)</span>
+表示按照优势函数方向更新策略，同时考虑新旧策略分布的比例</p>
+<mark class="hl-label red">为什么要这么麻烦再加入一个价值模型，而不直接使用奖励分数？</mark>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">在强化学习中，对单个动作来说，RM 计算的奖励分数不一定能平滑地表示“这个状态总体好坏”</span><br><span class="line"></span><br><span class="line">假设一个场景：训练一个Agent玩一个游戏，吃到金色星星得+10分，吃到银色星星得+1分。</span><br><span class="line"></span><br><span class="line">- 没有价值模型（参考线）的情况:</span><br><span class="line">Agent吃到金色星星，获得+10奖励。策略会疯狂地增加导致这个结果的所有行动的概率。但如果这个+10分只是因为运气好（比如星星随机出现在它面前），而不是策略真的有多高明，这种更新就是有噪声和误导性的。</span><br><span class="line"></span><br><span class="line">- 有价值模型（参考线）的情况:</span><br><span class="line">价值模型通过学习发现，在当前状态下，平均能获得约+3分（因为金银星星随机出现）。</span><br><span class="line">当Agent吃到金色星星获得+10分时，优势函数计算为：A = +10 (实际得分) - +3 (预期得分) = +7。</span><br><span class="line">PPO看到的是“+7”的优势，意思是“这次行动比平时好了7分”，然后据此进行适度奖励。这个过程更加合理和稳定。</span><br><span class="line">同样，如果它什么都没吃到（得0分），优势为：A = 0 - 3 = -3。说明做得比预期差，会被惩罚。</span><br></pre></td></tr></table></figure>
+
+<p>总结就是：</p>
+<ul>
+<li><strong>没有价值模型：</strong>
+奖励完全依赖随机结果，更新可能过度、噪声大</li>
+<li><strong>有价值模型：</strong>
+奖励通过减去期望（参考线）得到优势，更新更稳健、合理</li>
+</ul>
+<p><strong>+ <span class="math inline">\(D_{KL}(\pi_{base}(\cdot|s_t)||\pi_\theta(\cdot|s_t))\)</span>
+– KL惩罚项</strong></p>
+<blockquote>
+<p>优势函数<span class="math inline">\(A_t\)</span>决定
+<strong>“哪个方向是好的”</strong> ，而KL惩罚则是决定
+<strong>“沿着这个方向可以走多远”</strong><br>
+核心作用：防止策略崩溃（policy collapse），保证更新稳定性</p>
+</blockquote>
+<p>在 PPO
+微调语言模型时，我们希望模型生成更高奖励的文本，但如果只追求奖励，模型可能会“胡乱写”。</p>
+<p>举个例子，奖励模型 RM 可能对某些奇怪句子给出很高分，LLM
+可能学会“作弊”，生成一些不连贯、甚至无意义的文本来骗 RM。</p>
+<p>为避免这种情况，我们需要控制 LLM 的变化幅度： 我们希望微调模型 <span class="math inline">\(\pi_\theta\)</span> 不要偏离初始模型 <span class="math inline">\(\pi_{base}\)</span>
+太多，即<strong>LLM应该慢慢改进生成方式，而不是突然完全改变生成风格。</strong></p>
+<p>KL 散度就是衡量两个概率分布差异的指标： <span class="math inline">\(D_{\mathrm{KL}}(\pi_\theta||\pi_{base})=\)</span>“<span class="math inline">\(\pi_\theta\)</span>与<span class="math inline">\(\pi_{base}\)</span>有多不一样”</p>
+<ul>
+<li>KL 越大 <span class="math inline">\(\to\)</span> 差异越大 <span class="math inline">\(\to\)</span> 需要惩罚</li>
+<li>KL 越小 <span class="math inline">\(\to\)</span> 越接近 <span class="math inline">\(\to\)</span> OK</li>
+</ul>
+<blockquote>
+<p>对语言模型来说，生成文本的每个词都是从概率分布里选的</p>
+</blockquote>
+<p>设初始模型 <span class="math inline">\(\pi_{base}\)</span>
+生成下一个词的概率为 <span class="math inline">\(\pi_{base}(y_t|y_{&lt;t},x)\)</span> ，微调模型
+<span class="math inline">\(\pi_\theta\)</span> 生成下一个词的概率为
+<span class="math inline">\(\pi_\theta(y_t|y_{&lt;t},x)\)</span>。那么PPO中KL散度计算的完整公式为：
+<span class="math display">\[D_{\mathrm{KL}}(\pi_\theta||\pi_{base})=\sum_t{\pi_\theta(y_t|y_{&lt;t},x)log\frac{\pi_\theta(y_t|y_{&lt;t},x)}{\pi_{base}(y_t|y_{&lt;t},x)}}\]</span></p>
+<p><span class="math inline">\(\beta\)</span>
+是一个超参数，用来控制KL惩罚强度。</p>
+<p>最后，<span class="math inline">\(\mathbb{E}_t[\cdot]\)</span>对所有时间步 <span class="math inline">\(t\)</span>
+或采样的<strong>状态–动作对</strong>取平均，使更新平滑</p>
+<hr>
+<h4 id="ppo-clip">PPO-CLIP</h4>
+<p><span class="math display">\[L^{PPO-CLIP}(\theta)=\mathbb(E)_t\left[min(r_t(\theta)A_t,
+clip(r_i(\theta),1-\epsilon,1+\epsilon)A_t)\right]\]</span></p>
+<p><code>Clip</code>限制策略更新的幅度 <span class="math display">\[
+\mathrm{clip}(r_t(\theta),1-\epsilon,1+\epsilon)=
+\begin{cases}
+1-\epsilon, &amp; \text{if } r_t(\theta) &lt; 1-\epsilon \\
+r_t(\theta), &amp; \text{if } 1-\epsilon \le r_t(\theta) \le 1+\epsilon
+\\
+1+\epsilon, &amp; \text{if } r_t(\theta) &gt; 1+\epsilon
+\end{cases}
+\]</span></p>
+<ul>
+<li>变化太小 <span class="math inline">\(\to\)</span> 直接用小值</li>
+<li>变化太大 <span class="math inline">\(\to\)</span>
+限制在安全范围</li>
+<li>变化适中 <span class="math inline">\(\to\)</span> 保留原值</li>
+</ul>
+<h4 id="演变过程">演变过程</h4>
+<blockquote>
+<p><strong>PG-&gt;AC-&gt;TRPO-&gt;PPO</strong>-&gt;DPO<br>
+推导过程详读：<br>
+[0] <a href="https://mp.weixin.qq.com/s/WptWT0GGqml-l3xhClMNyg">LLM强化学习算法演进之路：Q-Learning-&gt;DQN-&gt;PPO-&gt;DPO等</a><br>
+[1] <a href="https://zhuanlan.zhihu.com/p/468828804">强化学习之PPO算法</a><br>
+[2] <a href="https://zhuanlan.zhihu.com/p/614115887">Proximal Policy
+Optimization (PPO) 算法理解：从策略梯度开始</a></p>
+</blockquote>
+<!-- ![](PPO演变过程.png) -->
+
+<p><img src="/p/6ad6791a/PG到AC到TRPO到PPO到DPO演进公式对比.png"></p>
+<h4 id="代码实现">代码实现</h4>
+<blockquote>
+<p>https://github.com/OpenRLHF/OpenRLHF/blob/main/openRLHF/trainer/PPO_trainer.py<br>
+https://github.com/louisnino/RLcode/blob/master/tutorial_PPO.py</p>
+</blockquote>
+<p><img src="/p/6ad6791a/PPO算法流程-Code-2.png"></p>
+<!-- ![](PPO算法流程-Code.png) -->
+
+<h4 id="ppo-到底是-on-policy-还是-off-policy">PPO 到底是 On Policy 还是
+Off Policy</h4>
+<p>对于上面的PPO算法伪代码来看，其第一个 for 循环可以认为做了 3
+件事：</p>
+<ol type="1">
+<li>在 旧的Policy 上采样</li>
+<li>优化参数</li>
+<li>用新的参数替换旧的参数</li>
+</ol>
+<p>如果只看这三个大步骤的话，PPO 是妥妥的 <code>On Policy</code></p>
+<p>但是在优化参数的时候，是采用了 K 个 epoch
+来优化的，在过程中会产生<span class="math inline">\(\theta_1,\theta_2,...,\theta_K\)</span>，除了第一步优化的是<span class="math inline">\(\theta_{old}\)</span>以外，其他的 epoch 的 <span class="math inline">\(\theta_i\)</span> 所采用的数据都是 <span class="math inline">\(\theta_{old}\)</span> 产生的。而 <span class="math inline">\(\theta_i \ne \theta_{old}\)</span>，这么看 PPO
+是一个 <code>Off Policy</code></p>
+<p>所以 PPO 宏观上是 On-Policy，微观上如果抠字眼的话是 Off Policy</p>
+<p>目前 PPO 通常来说被归为 On Policy:</p>
+<ol type="1">
+<li>在 OpenAI 的官方教程 spinning up 里，明确的提到“PPO is an on-policy
+algorithm.“
+来源：https://spinningup.openai.com/en/latest/algorithms/ppo.html</li>
+<li>Matthias Plappert 曾经是 OpenAI 的员工，并且与 PPO 的作者 John
+Schulman 共同参与了 https://github.com/openai/baselines
+项目，这里面列举了一些常用 RL 算法的高效实现。Matthias Plappert 曾在
+github 上公开表示：“To clarify: PPO is an on-policy algorithm …”
+来源：https://github.com/openai/baselines/issues/316</li>
+</ol>
+<h3 id="dpodirect-preference-optimization直接偏好优化">DPO（Direct
+Preference Optimization，直接偏好优化）</h3>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/2305.18290">Direct Preference
+Optimization:Your Language Model is Secretly a Reward Model</a></p>
+</blockquote>
+<p><img src="/p/6ad6791a/【DPO】RLHF与DPO的训练架构对比.png"></p>
+<p>RLHF的简化方案，目标是避免复杂的策略梯度和PPO训练。</p>
+<p><strong>核心思想：</strong>
+通过对比训练让模型直接给更受偏好的输出分配更高概率，而不显式使用 RL
+的采样和价值函数。</p>
+<p>DPO去除了RM部分，只需要通过<span class="math inline">\(\pi_{base}\)</span>与<span class="math inline">\(\pi_\theta\)</span>的对比训练完成。</p>
+<p>设：</p>
+<ul>
+<li><span class="math inline">\(\pi_\theta(y|x)\)</span> =
+当前待训练模型的条件概率</li>
+<li><span class="math inline">\(\pi_{ref}(y|x)\)</span> =
+冻结的参考模型概率（例如SFT模型）</li>
+</ul>
+<p>DPO通过对比两个输出的相对比值进行优化，目标函数为： <span class="math display">\[
+L^{DPO}(\theta)=-\mathbb{E}_{(x,y^+,y^-)\sim
+D}\left[log\sigma\left(\beta[log\frac{\pi_\theta(y^+|x)}{\pi_{ref}(y^+|x)}-log\frac{\pi_\theta(y^-|x)}{\pi_{ref}(y^-|x)}]\right)\right]
+\]</span></p>
+<p>目标就是让 <span class="math inline">\(\frac{\pi_\theta(y^+|x)}{\pi_{ref}(y^+|x)}\)</span>的值更高，更倾向于输出
+<span class="math inline">\(y^+\)</span> 。让 <span class="math inline">\(\frac{\pi_\theta(y^-|x)}{\pi_{ref}(y^-|x)}\)</span>
+的值更低，更少输出 <span class="math inline">\(y^-\)</span> 。分母 <span class="math inline">\(\pi_{ref}\)</span>
+相当于约束模型不要偏离初始模型太远。</p>
+<p>最后通过 <span class="math inline">\(\mathbb{E}_{(x,y^+,y^-)\sim
+D}[\cdot]\)</span> 在整个训练数据分布 <span class="math inline">\(D\)</span>
+上取期望，即对所有样本的损失函数求平均。</p>
+<p>取负号把“最大化对比偏好分数”转换成“最小化损失函数”，便于用梯度下降优化。</p>
+<h4 id="公式推导">公式推导</h4>
+<blockquote>
+<p><a href="https://mp.weixin.qq.com/s/WptWT0GGqml-l3xhClMNyg">LLM强化学习算法演进之路：Q-Learning-&gt;DQN-&gt;PPO-&gt;DPO等</a>
+DPO部分</p>
+</blockquote>
+<p>记<span class="math inline">\(r_\phi\)</span>是 Reward_model，<span class="math inline">\(\pi_\theta\)</span>是要优化的模型，<span class="math inline">\(\pi_{ref}\)</span>是 dpo 和 PPO 都用到的
+reference_model</p>
+<p>Reward_model loss: <span class="math display">\[
+\max_{r_{\phi}}\left\{\mathbb{E}_{\left(x, y_{win}, y_{loss}\right) \sim
+\mathcal{D}}\left[\log\sigma(r_{\phi}(x, y_{win})-r_{\phi}(x,
+y_{loss}))\right]\right\}
+\]</span> PPO loss: <span class="math display">\[
+\max_{\pi_{\theta}}\left\{\mathbb{E}_{x \sim \mathcal{D}, y \sim
+\pi_{\theta}(y \mid x)}\left[r_{\phi}(x, y)\right]-\beta \mathbb{D}_{K
+L}\left[\pi_{\theta}(y \mid x) \| \pi_{ref}(y \mid x)\right]\right\}
+\]</span> dpo loss: <span class="math display">\[
+\max_{\pi_{\theta}}\left\{\mathbb{E}_{\left(x, y_{win}, y_{loss}\right)
+\sim \mathcal{D}}\left[\log \sigma\left(\beta \log
+\frac{\pi_{\theta}(y_{win} \mid x)}{\pi_{ref}(y_{win} \mid x)}-\beta
+\log \frac{\pi_{\theta}(y_{loss} \mid x)}{\pi_{ref}(y_{loss} \mid
+x)}\right)\right]\right\}
+\]</span> KL散度: <span class="math display">\[
+\mathbb{D}_{K L}(P \| Q)=\sum_{i} P(i) \log
+\left(\frac{P(i)}{Q(i)}\right)
+\]</span></p>
+<p>针对 PPO 的 loss 函数，做以下变换：</p>
+<ul>
+<li>代入 KL 散度(<span class="math inline">\(y\sim\pi_{\theta}(y\mid
+x)\)</span>提取放到左下角)： <span class="math display">\[
+\max _{\pi_{\theta}}\left\{\mathbb{E}_{x \sim \mathcal{D}, y \sim
+\pi_{\theta}(y \mid x)}\left[r_{\phi}(x, y)-\beta \log
+\frac{\pi_{\theta}(y \mid x)}{\pi_{\mathrm{ref}}(y \mid
+x)}\right]\right\}
+\]</span></li>
+<li>乘<span class="math inline">\(-\frac{1}{\beta}\)</span>，<span class="math inline">\(\max\to\min\)</span>： <span class="math display">\[
+\min_{\pi_{\theta}}\left\{\mathbb{E}_{x \sim \mathcal{D}, y \sim
+\pi_{\theta}(y \mid x)}\left[\log \frac{\pi_{\theta}(y \mid
+x)}{\pi_{\mathrm{ref}}(y \mid x)}-\frac{1}{\beta} r_{\phi}(x,
+y)\right]\right\}
+\]</span></li>
+<li>等价变换得： <span class="math display">\[
+\min_{\pi_{\theta}}\left\{\mathbb{E}_{x \sim \mathcal{D}, y \sim
+\pi_{\theta}(y \mid x)}\left[\log \frac{\pi_{\theta}(y \mid
+x)}{\pi_{\text {ref }}(y \mid x)}-\log e^{\frac{1}{\beta} r_{\phi}(x,
+y)}\right]\right\}
+\]</span> <span class="math display">\[
+\Rightarrow\min _{\pi_{\theta}}\left\{\mathbb{E}_{x \sim \mathcal{D}, y
+\sim \pi_{\theta}(y \mid x)}\left[\log \frac{\pi_{\theta}(y \mid
+x)}{\pi_{\mathrm{ref}}(y \mid x) e^{r_{\phi}(x, y) /
+\beta}}\right]\right\}
+\]</span></li>
+</ul>
+<p>构造新的概率分布：<span class="math inline">\(\pi^*(y\mid
+x)=\frac{\pi_{ref}(y\mid x)e^{r_\phi(x,y)/\beta}}{Z(x)}\)</span><br>
+为保证分布概率和等于1，进行归一化：<span class="math inline">\(Z(x)=\sum_y{\pi_{ref}(y\mid
+x)e^{r_\phi(x,y)/\beta}}\)</span></p>
+<p>带入上面的式子： <span class="math display">\[
+\begin{aligned}
+&amp;\Rightarrow \min_{\pi_\theta}\mathbb{E}_{x\sim D,y\sim
+\pi_\theta(y\mid x)}\left[log\frac{\pi_\theta(y\mid
+x)}{\frac{\pi_{ref}(y\mid x)e^{r_\phi(x,y)/\beta}}{Z(x)}Z(x)}\right] \\
+&amp;\Rightarrow \min_{\pi_\theta}\mathbb{E}_{x\sim D,y\sim
+\pi_\theta(y\mid x)}\left[log\frac{\pi_\theta(y\mid x)}{\pi^*(y\mid
+x)}-log{Z(x)}\right]
+\end{aligned}
+\]</span></p>
+<p>由于<span class="math inline">\(\pi_\theta\)</span>和<span class="math inline">\(Z(x)\)</span>完全没有关系，可以省略： <span class="math display">\[
+\Rightarrow \min_{\pi_\theta}\mathbb{E}_{x\sim D,y\sim \pi_\theta(y\mid
+x)}\left[log\frac{\pi_\theta(y\mid x)}{\pi^*(y\mid x)}\right]
+\]</span></p>
+<p>带入KL散度（左下角<span class="math inline">\(y\sim \pi_\theta(y\mid
+x)\)</span>没有了）： <span class="math display">\[
+\Rightarrow \min_{\pi_\theta}\mathbb{E}_{x\sim
+D}\mathbb{D}_{KL}(\pi_\theta(y\mid x)||\pi^*(y\mid x))
+\]</span></p>
+<p><strong>也就是说，在已知 Reward_model 的参数 <span class="math inline">\(r_\phi\)</span> 的情况下，可以求得 PPO
+的最优解<span class="math inline">\(\pi^*\)</span><br>
+同理，已知 PPO 的最优解<span class="math inline">\(\pi^*\)</span>，是不是也可以反向求解 <span class="math inline">\(r_\phi\)</span> 呢？</strong></p>
+<p>转换<span class="math inline">\(\pi^*\)</span>的定义可以得到： <span class="math display">\[
+\begin{aligned}
+&amp; \frac{\pi^*(y\mid x)Z(x)}{\pi_{ref}(y\mid
+x)}=e^{r_\phi(x,y)/\beta} \\
+\Rightarrow \quad &amp; r_\phi(x,y)=\beta log\frac{\pi^*(y\mid
+x)Z(x)}{\pi_{ref}(y\mid x)}+\beta log Z(x)
+\end{aligned}
+\]</span></p>
+<p>带入到Reward Model的loss函数： <span class="math display">\[
+\begin{aligned}
+&amp; \textcolor{red}{\mathrm{reward\_model\_loss}} \\
+&amp; =\max_{\pi^*}\left\{\mathbb{E}_{(x,y_{win},y_{loss})\sim
+D}\left[log\sigma\left(\beta log\frac{\pi^*({y_{win}\mid
+x)}}{\pi_{ref}({y_{win}\mid x)}}+\beta log{Z(x)}-\beta
+log\frac{\pi^*({y_{loss}\mid x})}{\pi_{ref}({y_{loss}\mid x})}-\beta
+log{Z(x)}\right)\right]\right\} \\
+&amp; = \max_{\pi^*}\left\{\mathbb{E}_{(x,y_{win},y_{loss})\sim
+D}\left[log\sigma\left(\beta log\frac{\pi_\theta({y_{win}\mid
+x)}}{\pi_{ref}({y_{win}\mid x)}}-\beta log\frac{\pi_\theta({y_{loss}\mid
+x})}{\pi_{ref}({y_{loss}\mid x})}\right)\right]\right\} \\
+&amp; = \textcolor{red}{\mathrm{dpo\_loss}}
+\end{aligned}
+\]</span> 证毕.</p>
+<h4 id="dpo-的局限性">DPO 的局限性</h4>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/2404.04626">Towards Analyzing and
+Understanding the Limitations of DPO: A Theoretical
+Perspective</a><br>
+<a href="https://zhuanlan.zhihu.com/p/1082394115?share_code=1hi1pTBE4eRUT&amp;utm_psn=1947827677722568501">知乎｜dpo
+的局限性</a></p>
+</blockquote>
+<p>经过上面的证明可以看出：<mark class="hl-label red">dpo 对标的从来都是不是 PPO，而是 Reward_model</mark></p>
+<p>二者不仅训练数据一样，loss 函数本质上也一致</p>
+<p><strong>+ DPO的大前提未被验证</strong></p>
+<p>DPO实际是以 Reward_model 的方式让模型学习 <code>evaluate</code>
+能力，但是却并没有证明一个重要假设：<code>模型的 evaluate 能力和 generate 能力到底是不是相互促进的？</code></p>
+<p>DPO 后的模型具有了更强的 evaluate 能力，但我们的目标是提升模型的
+generate 能力。如果这个基本假设不成立，那 DPO
+的学习过程就没有什么价值。</p>
+<p>这个大前提的成立与否，还关系到 SPIN、self-reward
+等左脚踩右脚的训练方式是否有存在的意义。</p>
+<p>也正是因为 DPO 是在让模型具有 Reward_model
+的能力，所以它并不在乎模型能不能说出一个好的句子，只在乎 loss margin
+是否在变大。大家训练 DPO 的时候，基本都遇到过 good_sentence 和
+bad_sentence 的 loss
+都上升的尴尬现象，往往需要我们加系数和调参数才能解决。</p>
+<p>Reward_model 的训练方式根本不在乎模型的 generate 能力，因此稳定训练的
+DPO 需要魔改 loss 函数。</p>
+<p><strong>+ DPO缺乏在线采样数据</strong></p>
+<p>已知：</p>
+<ul>
+<li>DPO 和 Reward_model 完全等价</li>
+<li>RLHF = Reward_model + PPO</li>
+</ul>
+<p>可得：PPO 所做的一切操作，便是 DPO 效果不如 RLHF 的原因。</p>
+<mark class="hl-label red">PPO 到底做了什么？</mark>  
+
+<p>PPO 没有使用任何训练数据，它唯一做的事情便是 generate，通过对模型
+generate 的文本进行打分，把 Reward_model 的 evaluate 能力转换成 generate
+能力喂给模型。因此，缺乏的这个 generate 的过程就是 DPO
+效果不行的原因。</p>
+<mark class="hl-label red">那这个 generate 的过程又带来了什么呢？</mark>  $\Rightarrow$ online 和 explore  
+
+<ul>
+<li>RLHF 是 online 学习方式，DPO 是 offline 学习方式。RLHF
+是修复模型当前已有的知识，属于因材施教，并且由于 do_sample
+的随机性，它可以进行 explore</li>
+<li>DPO 则是强制模型学习训练者认为正确的知识（偏好数据对中的 good
+sentence），沿着一条被设定的正确的路线使劲走，这种 offline
+的学习方式也导致它不具备 explore 的空间</li>
+</ul>
+<p>在 DPO 训练中常用的一个技巧：</p>
+<ul>
+<li>让模型先对“偏好数据对的 good sentence“做一次 sft，再进行 DPO
+训练。就是强行让 DPO 变成 online 的过程，毕竟训过的知识大概率也是可以
+generate 出来的</li>
+</ul>
+<p>在 DPO 数据中常用的一个技巧：</p>
+<ul>
+<li>把模型自己生成的 path@N 结果，拿来构造成偏好 pair 对，就是同时在模拟
+PPO 的 online 和 explore 能力</li>
+</ul>
+<h4 id="dpo-数据构建">DPO 数据构建</h4>
+<p><img src="/p/6ad6791a/【DPO】DPO（Direct%20Preference%20Optimization）.png"></p>
+<p>DPO训练数据构造：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;chosen&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Question&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;role&quot;</span><span class="punctuation">:</span> <span class="string">&quot;user&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;good answer&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;role&quot;</span><span class="punctuation">:</span> <span class="string">&quot;assistant&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;rejected&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Question&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;role&quot;</span><span class="punctuation">:</span> <span class="string">&quot;user&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;bad answer&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;role&quot;</span><span class="punctuation">:</span> <span class="string">&quot;assistant&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>在 DPO
+训练中，每条样本只需要提供一个“偏好回答（chosen）”和一个“非偏好回答（rejected）”。模型通过直接对比这两者的相对概率，无需单独训练奖励模型（RM），即可学习生成更符合人类偏好的输出，从而达到与
+RLHF-PPO 相近甚至更稳定的对齐效果。</p>
+<h4 id="代码实现-1">代码实现</h4>
+<blockquote>
+<p>https://github.com/OpenRLHF/OpenRLHF/blob/main/openRLHF/trainer/dpo_trainer.py</p>
+</blockquote>
+<h2 id="进一步阅读">进一步阅读</h2>
+<p>[0] <a href="https://huyenchip.com/2023/05/02/RLHF.html">RLHF:
+Reinforcement Learning from Human Feedback</a><br>
+[1] <a href="https://medium.com/@mandeep0405/PPO-dpo-grpo-reinforcement-learning-techniques-for-training-llms-193459ffc14e">PPO,
+DPO &amp; GRPO: Reinforcement Learning Techniques for Training
+LLMs</a><br>
+[2] <a href="https://zhuanlan.zhihu.com/p/671780768">DPO 是如何简化 RLHF
+的</a><br>
+[3] <a href="https://www.bilibili.com/video/BV1Ao4y187GD/?spm_id_from=333.337.search-card.all.click">《John
+Schulman - Reinforcement Learning from Human Feedback: Progress and
+Challenges》</a></p>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>强化学习</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>强化学习</tag>
+        <tag>RLHF</tag>
+        <tag>PPO</tag>
+        <tag>DPO</tag>
       </tags>
   </entry>
   <entry>
