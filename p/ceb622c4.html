@@ -1,0 +1,722 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers中的Attention实现细节 | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Transformers 为什么采用 QKV Attention  注意：在看下面这篇论文之前，最好熟悉一下最原始的 Bahdanau Attention(参考知乎｜详解Bahdanau Attention)，这是一切 Attention 的起点。把 Bahdanau Attention 研究明白了对于理解 Transformers 的结构有很大帮助  Transformers 的论文在 Att">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Transformers中的Attention实现细节">
+<meta property="og:url" content="https://ybqu.github.io/p/ceb622c4.html">
+<meta property="og:site_name" content="DouDou&#39;s blog">
+<meta property="og:description" content="Transformers 为什么采用 QKV Attention  注意：在看下面这篇论文之前，最好熟悉一下最原始的 Bahdanau Attention(参考知乎｜详解Bahdanau Attention)，这是一切 Attention 的起点。把 Bahdanau Attention 研究明白了对于理解 Transformers 的结构有很大帮助  Transformers 的论文在 Att">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ybqu.github.io/images/transformers-attention.png">
+<meta property="article:published_time" content="2025-09-09T15:43:31.000Z">
+<meta property="article:modified_time" content="2025-09-09T15:43:31.000Z">
+<meta property="article:author" content="DouDou.Ybqu">
+<meta property="article:tag" content="LLMs">
+<meta property="article:tag" content="Transformers">
+<meta property="article:tag" content="Attention">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ybqu.github.io/images/transformers-attention.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Transformers中的Attention实现细节",
+  "url": "https://ybqu.github.io/p/ceb622c4.html",
+  "image": "https://ybqu.github.io/images/transformers-attention.png",
+  "datePublished": "2025-09-09T15:43:31.000Z",
+  "dateModified": "2025-09-09T15:43:31.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "DouDou.Ybqu",
+      "url": "https://ybqu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/avatar-circular.ico"><link rel="canonical" href="https://ybqu.github.io/p/ceb622c4.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          const hour = new Date().getHours()
+          const isNight = hour <= 24 || hour >= 18
+          if (theme === undefined) isNight ? activateDarkMode() : activateLightMode()
+          else theme === 'light' ? activateLightMode() : activateDarkMode()
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":true,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":330,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Transformers中的Attention实现细节',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js/pace.min.js"></script><div id="web_bg" style="background-image: url(/img/background_gril.jpeg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar-modified.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">31</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">29</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">31</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/avatar-circular.png" alt="Logo"><span class="site-name">DouDou's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">Transformers中的Attention实现细节</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Transformers中的Attention实现细节</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-09-09T15:43:31.000Z" title="发表于 2025-09-09 23:43:31">2025-09-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-09T15:43:31.000Z" title="更新于 2025-09-09 23:43:31">2025-09-09</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/">LLMs</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/Transformers/">Transformers</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/LLMs/Transformers/Attention/">Attention</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>9分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;It has been&quot;,&quot;messageNext&quot;:&quot;days since the last update, the content of the article may be outdated.&quot;,&quot;postUpdate&quot;:&quot;2025-09-09 23:43:31&quot;}" hidden></div><p><img src="/p/ceb622c4/transformers-attention.png"></p>
+<h2 id="transformers-为什么采用-qkv-attention">Transformers 为什么采用
+QKV Attention</h2>
+<blockquote>
+<p>注意：在看下面这篇论文之前，最好熟悉一下最原始的 <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1409.0473">Bahdanau Attention</a>(参考<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/272662664">知乎｜详解Bahdanau
+Attention</a>)，这是一切 Attention 的起点。把 Bahdanau Attention
+研究明白了对于理解 Transformers 的结构有很大帮助</p>
+</blockquote>
+<p>Transformers 的论文在 Attention
+这一部分的描述并没有讲的特别细，尤其是关于 Query、Key 和 Value
+的设计。</p>
+<p>参考同期的论文<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1702.04521">《Frustratingly Short Attention
+Spans In Neural Language Modeling》</a> – <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1409.0473">Bahdanau Attention</a>的改进</p>
+<!-- - Encoder
+$$
+\begin{aligned}
+  \textcolor{blue}{h_0} &= 0 \\
+  \textcolor{blue}{h_j} &= 
+    \begin{bmatrix}\overrightarrow{\textcolor{blue}{h_j}} \\ \overleftarrow{\textcolor{blue}{h_j}}\end{bmatrix} \\
+  \textcolor{blue}{h_j} &= \mathrm{RNN}_{GRU}(\textcolor{blue}{h_{j-1}},x_j) \\
+  \textcolor{yellow}{C} &= \mathrm{tanh}(V\cdot \textcolor{blue}{h_T})
+\end{aligned}
+$$
+
+- Decoder
+$$
+\begin{aligned}
+  \textcolor{red}{s_0} &= \mathrm{tanh}(V' \cdot \overleftarrow{\textcolor{blue}{h_1}}) \\
+  e_{ij} &= v_a^T\mathrm{tanh}(W_a\textcolor{red}{s_{i-1}} + U_a\textcolor{blue}{h_j}) \\
+  \alpha_{ij} &= \frac{e_{ij}}{\sum_{k=1}^Te_{ik}}, \alpha_{ij} \text{ is a scalar} \\
+  \textcolor{yellow}{c_i} &= \sum_{j=1}^T\alpha_{ij}\textcolor{blue}{h_j} \\
+  \textcolor{red}{s_i} &= \mathrm{Bi-RNN}_{GRU}(\textcolor{red}{s_{i-1}}, [y_i;\textcolor{yellow}{c_i}]) \\
+  \hat{y_i} &= \mathrm{softmax}(\mathrm{MLP}(\textcolor{red}{s_i}))
+\end{aligned}
+$$ -->
+
+<p>论文中认为当时的 Attention 的隐向量至少承担了3个功能：</p>
+<ul>
+<li>计算 attention score</li>
+<li>计算 context vector</li>
+<li>作为 hidden state 来进行 RNN 的计算</li>
+</ul>
+<p>为了更好的适配任务，作者参考了 Memory
+Netorkds，一次输出了3个隐向量（<code>key</code>、<code>value</code>、<code>predict</code>）。<br>
+这3个隐向量来计算Attention：</p>
+<ul>
+<li>key 用来计算 attention score</li>
+<li>value 用来和 Atention score 相乘</li>
+<li>predict 用于预测词的分布</li>
+</ul>
+<p><span class="math display">\[
+\begin{aligned}
+\begin{bmatrix} k_t \\ v_t\end{bmatrix} = h_t &amp;\in \mathbb{R}^{2k}
+\\
+M_t=\mathrm{tanh}(W^Y[k_{t-L}\cdots k_{t-1}] + (W^hk_t)1^T) &amp;\in
+\mathbb{R}^{k\times L} \\
+\alpha_t = \mathrm{softmax}(w^TM_t) &amp;\in \mathbb{R}^{1\times L} \\
+r_t = [v_{t-L}\cdots v_{t-1}]\alpha^T &amp;\in \mathbb{R}^{k} \\
+h_t^* = \mathrm{tanh}(W^rr_t + W^xv_t) &amp;\in \mathbb{R}^{k} \\
+\end{aligned}
+\]</span></p>
+<p>看公式可以知道，value 在这里作用和 Transformers 中的Attention 的
+value 是完全一致的。</p>
+<mark class="hl-label red">那怎么没有 query 呢？</mark> 实际上 query 被隐藏在了 key 之中。在Transformers之前Attention 和 RNN 依然是深度绑定的。
+
+<p>作者在这里用了时刻 t 的 key 向量，和时刻 t 之前的 key 向量做了
+Attention，因为作者假设时刻 t 之前的 key 和 value 是 Memory。 所以 query
+就是 k_t, 而 t 时刻前面的就是 key。</p>
+<p>虽然写法不一样，但是 Transformers 的 qkv Attention
+的设计和这篇论文的设计的整体框架是一样的。细微之处的不同点列举如下：</p>
+<ol type="1">
+<li>Transformers 由于丢弃了
+RNN，所以可以更好的并行，采用了矩阵运算的形式</li>
+<li>Transformers 采用了 dot Attention，应该是参考了 Luong
+Attention。(这篇文章依然采用了 Bahdanau Attention 所使用的 Addition
+Attention)</li>
+<li>Transformers 的 Attention 是全连接图，而这里是 causal 形式的
+Attention</li>
+</ol>
+<h2 id="为什么-attention-最后采用了-dot-product-而不是-addition">为什么
+Attention 最后采用了 Dot Product 而不是 Addition</h2>
+<p>在 Attention 刚被提出来的时候，其实是通过 Addition
+来建立关联关系的。在 <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1409.0473">Bahdanau
+Attention</a>中，表示为 <span class="math display">\[e_{ij}=V_a^T\mathrm{tanh}(W_as_{i-1}+U_ah_j)=V_a^T\mathrm{tanh}(Q+K)\]</span></p>
+<p>后来，<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1508.04025">Luong Attention</a>
+对比了多种 Attention 的方式，其中就包括了 Transformers 最终采用的 dot
+attention，表示为： <span class="math display">\[e_{ij}=W_Qs_{i-1}(W_Kh_j)^T=QK^T\]</span></p>
+<blockquote>
+<p>论文中，Addition Attention的效果并不太好</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1706.03762">《Attention is All your
+Need》</a>论文中，作者提到：</p>
+<blockquote>
+<p>While the two are similar in theoretical complexity, dot-product
+attention is much faster and more space-efficient in practice, since it
+can be implemented using highly optimized matrix multiplication
+code.</p>
+</blockquote>
+<p>所以说无论是效果还是计算效率上，dot attention 似乎都更好一点。</p>
+<mark class="hl-label red">那么计算效率到底快多少呢？</mark>
+
+<p>论文<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2007.00072">《Data Movement Is All
+You Need: A Case Study On Optimizing Transformers》</a>中，作者对比了
+BERT 中不同运算的耗时。</p>
+<p><img src="/p/ceb622c4/Data_Movement_Is_All_You_Need_计算速度对比.png"></p>
+<blockquote>
+<p>其中三角形△代表的<code>矩阵相乘</code>，方块◻️代表的是<code>softmax and layer normalization</code>，圆形○则是剩余的运算，比如
+biases, dropout, activations, and residual connections。</p>
+</blockquote>
+<p>可以看到，非矩阵相乘的运算量只占了0.2%， 但是耗时却占据了39%。</p>
+<p>之所以差异如此明显，是因为 Nvidia 的显卡里专门设置了 Tensor
+Core，和其他运算模块的对比如下： <img src="/p/ceb622c4/NVIDIA%20A100%20Tensor%20Core%20GPU%20Performance%20Specs.png"></p>
+<p>可以看出，差距还是很明显的。FP32 使用 Tensor Core 计算的 TFLOPS
+是普通 FP32 模块的 156/19.5= 8 倍！</p>
+<h2 id="attention-为什么使用-multi-head-">Attention 为什么使用 Multi
+Head ?</h2>
+<p>Multi Head Attention 最早出现在论文 <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1703.03130">《A STRUCTURED SELF-ATTENTIVE
+SENTENCE EMBEDDING》</a>，用来做表示学习</p>
+<p>作者参考了 Bahdanau Attention，只不过在计算 attention score
+的时候，输入从<span class="math inline">\(h_j\)</span>、<span class="math inline">\(\textcolor{red}{s_i}\)</span>改成里双向 LSTM
+的两个方向的 hidden states</p>
+<ul>
+<li>Encoder <span class="math display">\[
+\begin{aligned}
+\textcolor{blue}{\overrightarrow{h_t}} &amp;= R_{LSTM}(w_t,
+\textcolor{blue}{\overrightarrow{h_{t-1}}}) \in \mathbb{R}^u \\
+\textcolor{red}{\overleftarrow{h_t}} &amp;= R_{LSTM}(w_t,
+\textcolor{red}{\overleftarrow{h_{t-1}}}) \in \mathbb{R}^u \\
+h_t &amp;= \begin{bmatrix}
+\textcolor{blue}{\overrightarrow{h_t}} \\
+\textcolor{red}{\overleftarrow{h_t}}
+\end{bmatrix} \in \mathbb{R}^{2u} \\
+e_{ij} &amp;= w_{s2}^T\mathrm{tanh(W_{s1}h_j)} \\
+&amp;= w_{s2}^T\mathrm{tanh([W_{s1}[:u]\quad
+W_{s1}[u:]]\begin{bmatrix}\overrightarrow{h_j}\\\textcolor{red}{\overleftarrow{h_j}}\end{bmatrix})}
+\\
+&amp;= w_{s2}^T\mathrm{tanh}(W_{s1}[:u]\cdot
+\textcolor{red}{\overleftarrow{h_j}} + W_{s1}[u:]\cdot
+\textcolor{blue}{\overrightarrow{h_j}}) \\
+\alpha_{ij} &amp;= \frac{e_{ij}}{\sum_{k=1}^T}, \alpha_{ij}\text{ is a
+scalar} \\
+m_i &amp;= \textcolor{yellow}{c_i} =
+\sum_{j=1}^T\alpha_{ij}\textcolor{blue}{h_j}
+\end{aligned}
+\]</span> 从公式明显可以看出，Self Attention 计算 Score
+的设计明显是参考了 Bahdanau Attention 的计算方法。</li>
+</ul>
+<p>上面的计算是单个 Attention 的计算方法。然后借鉴一下卷积网络的多个
+kernel 的思想，作者设计了多个 Attention，期望不同的 Attention
+学习到不同的注意力，从而更好的提取特征。</p>
+<blockquote>
+<p>这种一个不行就上多个到方法在深度学习中经常使用，比如 CNN 多 kernel，
+MultiHead Attention， Mixture of Experts 等。</p>
+</blockquote>
+<p>基于这个思路，作者提出了 Attention 的矩阵运算形式</p>
+<p><span class="math display">\[
+\begin{aligned}
+H = (h_1,h_2, ... ,h_n) &amp;\in \mathbb{R}^{n\times 2u} \\
+W_{s1} &amp;\in \mathbb{R}^{d\times 2u} \\
+W_{s2} &amp;\in \mathbb{R}^{r\times d} \\
+E = W_{s2}\mathrm{tanh}(W_{s1}\cdot H^T) &amp;\in \mathbb{R}^{r\times n}
+\\
+A = \mathrm{softmax}(E) &amp;\in \mathbb{R}^{r\times n} \\
+M = AH &amp;\in \mathbb{R}^{r\times 2u}
+\end{aligned}
+\]</span></p>
+<p>这其实就是MultiHead了，在公式中是通过<span class="math inline">\(r\)</span>来体现的。矩阵相乘 <span class="math inline">\(AH\)</span> 已经和 Transformers
+最终形态的Attention <span class="math inline">\(AV=\mathrm{softmax}(\frac{QK^T}{\sqrt{d}})V\)</span>
+有点类似了</p>
+<blockquote>
+<p>随着 head 数量增多后，在具体任务上的表现 <img src="/p/ceb622c4/A%20STRUCTURED%20SELF-ATTENTIVE%20SENTENCE%20EMBEDDING.png"></p>
+</blockquote>
+<p>后来论文<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2106.09650">Multi-head or
+Single-head? An Empirical Comparison for Transformer
+Training</a>的作者认为，当前的 MHA 的形式，同一层的 Head
+之间没有任何关联，想建立关联得到下一层，这样的效果可能不如多层的 Single
+Head。</p>
+<p>通过实验，也确实证明了多层 Single Head 比浅层的 MHA 效果好 <img src="/p/ceb622c4/Multi-head%20or%20Single-head.png"></p>
+<mark class="hl-label red">那为什么没有流行起来呢？</mark>
+
+<blockquote>
+<p>核心还是 MHA 可以非常方便的并行计算，而采用 Single Head
+的话，层与层之间有诸多的非线性操作还有 norm 等，不如 MHA
+直接做一些视图变换然后直接矩阵相乘效率高</p>
+</blockquote>
+<h2 id="mha--gqa-代码实现">MHA &amp; GQA 代码实现</h2>
+<p><strong>MHA代码实现</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">q, k, v = <span class="variable language_">self</span>.q_proj(x), <span class="variable language_">self</span>.k_proj(x), <span class="variable language_">self</span>.v_proj(x)</span><br><span class="line"><span class="comment"># 要实现 multi attention，所以要将最后一维切割。比如本来是 (4，512，128) 大小的矩阵，现在有8个头，最后一维被切成8块，变成了(4,512,8,16) 的矩阵</span></span><br><span class="line"><span class="comment"># 但是现在序列长度 512在矩阵的位置是第二位， 我们要保持 512 这一维和 16 这一维在一起，然后做attention，所以还需要做一个 view 的变换</span></span><br><span class="line">k = k.view(B, T, <span class="variable language_">self</span>.n_head, C // <span class="variable language_">self</span>.n_head).transpose(<span class="number">1</span>, <span class="number">2</span>) <span class="comment"># (B, nh, T, hs)</span></span><br><span class="line">q = q.view(B, T, <span class="variable language_">self</span>.n_head, C // <span class="variable language_">self</span>.n_head).transpose(<span class="number">1</span>, <span class="number">2</span>) <span class="comment"># (B, nh, T, hs)</span></span><br><span class="line">v = v.view(B, T, <span class="variable language_">self</span>.n_head, C // <span class="variable language_">self</span>.n_head).transpose(<span class="number">1</span>, <span class="number">2</span>) <span class="comment"># (B, nh, T, hs)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 求未归一化 attention 的分数</span></span><br><span class="line">att = (q @ k.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) * (<span class="number">1.0</span> / math.sqrt(k.size(-<span class="number">1</span>)))</span><br><span class="line"><span class="comment"># 得到为归一化的 attention 之后，对得分进行 mask，因为当前位置不应该看到后面的信息</span></span><br><span class="line"><span class="variable language_">self</span>.bias = torch.tril(torch.ones(max_length, max_length)).view(<span class="number">1</span>, <span class="number">1</span>, max_length, max_length)</span><br><span class="line">att = att.masked_fill(<span class="variable language_">self</span>.bias[:,:,:T,:T] == <span class="number">0</span>, torch.finfo(x.dtype).<span class="built_in">min</span>)</span><br><span class="line">att = F.softmax(att, dim=-<span class="number">1</span>)</span><br><span class="line"><span class="comment"># self.bias 是一个 tril 矩阵，右上角全为 0</span></span><br><span class="line"><span class="comment"># 得到分数后和 v 相乘, 并还原到多头前的维度</span></span><br><span class="line">y = att @ v</span><br><span class="line">y = y.transpose(<span class="number">1</span>, <span class="number">2</span>).contiguous().view(B, T, C)</span><br><span class="line">y = <span class="variable language_">self</span>.o_proj(y)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>flash_attention版本实现：https://github.com/tspeterkim/flash-attention-minimal/blob/main/flash.cu</p>
+</blockquote>
+<p><strong>GQA代码实现</strong></p>
+<p>Key 和 Value 在同一个组中被不同的 Query共享。</p>
+<ul>
+<li>MHA 中 Query, Key, Value 的矩阵的大小为 (batch, n_head, length,
+hidden_size)</li>
+<li>GQA 中 Query 的大小保持不变，Key, Value 的矩阵的大小变为 (batch,
+n_head / group_size, length, hidden_size)</li>
+</ul>
+<p>为了实现矩阵的相乘，有两种做法：</p>
+<p><strong>方法一</strong></p>
+<p><strong>利用广播机制</strong>，把 QKV Reshape 成下面的样子：</p>
+<ul>
+<li>Query: (batch, n_head / group_size, group_size, length,
+hidden_size)</li>
+<li>Key: (batch, n_head / group_size, 1, length, hidden_size)</li>
+<li>Value: (batch, n_head / group_size, 1, length, hidden_size)</li>
+</ul>
+<p>这种方法最直观，最好理解，但是需要做一些广播和最终合并的处理,要对 MHA
+的代码进行多处修改</p>
+<p><strong>方法二</strong></p>
+<mark class="hl-label red">能不能把问题转变成原来的 MHA？</mark>  
+
+<p>答案就是把 Key 和 Value 进行 repeat，用相同的 Key 和 Value
+填充到<code>原来的 MHA 中的 Key 和 Value</code>，这样就把问题转换成 MHA
+了。</p>
+<p>好处就是只需要加一个函数，然后在原来的 MHA
+上只需要加一行代码就可以完成 GQA。代码如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">repeat_kv</span>(<span class="params">hidden_states: torch.Tensor, n_rep: <span class="built_in">int</span></span>) -&gt; torch.Tensor:</span><br><span class="line">    batch, num_key_value_heads, slen, head_dim = hidden_states.shape</span><br><span class="line">    <span class="keyword">if</span> n_rep == <span class="number">1</span>:</span><br><span class="line">        <span class="keyword">return</span> hidden_states</span><br><span class="line">    hidden_states = hidden_states[:, :, <span class="literal">None</span>, :, :].expand(batch, num_key_value_heads, n_rep, slen, head_dim)</span><br><span class="line">    <span class="keyword">return</span> hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 新增一行</span></span><br><span class="line">k, v = repeat_kv(k, group_size), repeat_kv(v, group_size)</span><br><span class="line"></span><br><span class="line">att = (q @ k.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) * (<span class="number">1.0</span> / math.sqrt(k.size(-<span class="number">1</span>)))</span><br><span class="line">att = F.softmax(att, dim=-<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>需要注意，这里面一定要用 expand 函数，而不要用 repeat。<br>
+因为 repeat 是真的会复制 tensor，而 expand 只是在 tensor
+的视图上做了一些变换，并没有真正的把 tensor 复制。</p>
+</blockquote>
+<h2 id="refrence--进一步阅读">Refrence &amp;&amp; 进一步阅读</h2>
+<p>[0] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1702.04521">Frustratingly Short
+Attention Spans In Neural Language Modeling</a><br>
+[1] <a target="_blank" rel="noopener" href="https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf">nvidia-ampere-architecture-whitepaper</a><br>
+[2] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1508.04025">Effective Approaches to
+Attention-based Neural Machine Translation</a><br>
+[3] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2007.00072">DATA MOVEMENT IS ALL YOU
+NEED: A CASE STUDY ON OPTIMIZING</a><br>
+[4] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2007.00072">TRANSFORMERS</a><br>
+[5] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2106.09650">Multi-head or
+Single-head? An Empirical</a><br>
+[6] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2106.09650">Comparison for
+Transformer Training</a><br>
+[7] <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1703.03130">A STRUCTURED
+SELF-ATTENTIVE SENTENCE EMBEDDING</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://ybqu.github.io">DouDou.Ybqu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://ybqu.github.io/p/ceb622c4.html">https://ybqu.github.io/p/ceb622c4.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://ybqu.github.io" target="_blank">DouDou's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/LLMs/">LLMs</a><a class="post-meta__tags" href="/tags/Transformers/">Transformers</a><a class="post-meta__tags" href="/tags/Attention/">Attention</a></div><div class="post-share"><div class="social-share" data-image="/images/transformers-attention.png" data-sites="twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/p/2e71c2ed.html" title="梯度下降推导"><img class="cover" src="/images/%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">梯度下降推导</div></div><div class="info-2"><div class="info-item-1">梯度下降的数学原理 假设我们的损失函数为\(L(\theta)\)，那么损失函数在点\(\theta_{t-1}\)处展开，则有： \[L(\theta)\approx L(\theta_{t-1})+g^T(\theta-\theta_{t-1})+\frac{1}{2}(\theta-\theta_{t-1})^TH(\theta-\theta_{t-1})+...\]  其中\(g\in \mathbb{R}^{n\times 1}\)为梯度，为列向量。\(H\in \mathbb{R}^{n\times n}\)为 Hessian 矩阵  如果只保留一阶近似，得到 \[L(\theta)\approx L(\theta_{t-1})+g^T(\theta-\theta_{t-1})\] 现在我们想让损失函数 \(L(\theta)\) 变得越小越好，也就是找到一个让\(L(\theta)\)最小的\(\theta\)，则有 \[ \begin{aligned} \underset{\theta}{\text{argmin}} L(\theta)&amp;\approx \...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/p/ec99b0e4.html" title="DeepSeek-MLA在prefill和decode时算子不同根本原因"><img class="cover" src="/images/MLA%EF%BC%8CMHA%EF%BC%8CGQA%EF%BC%8CMQA%E5%AF%B9%E6%AF%94%E5%9B%BE.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">DeepSeek-MLA在prefill和decode时算子不同根本原因</div></div><div class="info-2"><div class="info-item-1"> prefill是compute bound，首要任务是解决算的慢问题(要牺牲存储，换取计算) decode是memory bound，首要任务是解决显存占用多和访存慢问题(要牺牲计算，换取存储)  通过下面对两阶段的几个互相成对的问题，我们从compute bound和memory bound的角度，来深入感受下为啥deepseek的MLA要在这俩阶段用不同的算子： Prefill阶段 为什么要显式升维？  因为MHA用的是FA算子，这个算子被优化的很好，也做了算子融合，GPU跑FA时候很爽很痛快，而且prefill阶段是compute bound，所以想在prefill阶段尽可能去用MHA算子，加速计算，所以能降时延 为什么不隐式计算？ 隐式计算过程包含了多个小的GEMM，没法用FA，GEMM本身倒是不拉，但是一堆琐碎的GEMM导致GPU算的很不爽，得一会儿搬数据一会儿调度算子一会儿读写中间变量的，这样搞时延就很拉了，所以主要是想用FA算子来加速计算 那存储问题不管了？升维后显存占用大啊？ prefill时要算的token太多，首要问题是算的慢，主要是compute boun...</div></div></div></a><a class="pagination-related" href="/p/94d94980.html" title="Deepseek-MLA"><img class="cover" src="/images/MLA%EF%BC%8CMHA%EF%BC%8CGQA%EF%BC%8CMQA%E5%AF%B9%E6%AF%94%E5%9B%BE.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">Deepseek-MLA</div></div><div class="info-2"><div class="info-item-1">MLA主要通过优化KV-cache来减少显存占用，从而提升推理性能。 首先我们来看下，对于生成模型，一个完整的推理阶段是什么样的，推理性能上有什么问题 LLM模型推理过程 LLM推理分为两个阶段：prefill阶段和decode阶段  prefill阶段：是模型对全部的Prompt tokens一次性并行计算，最终会生成第一个输出token decode阶段：每次生成一个token，直到生成EOS（end-of-sequence）token，产出最终的response  在推理过程中，由于模型堆叠了多层transformer，所以核心的计算消耗在Transformer内部，包括MHA，FFN等操作，其中MHA要计算Q，K ，V 矩阵，来做多头注意力的计算。 在LLM生成过程中，是一个基于前向序token列预测下一个token的过程，序列中的token（无论是prefill阶段，还是decode阶段）只与它前面的token交互来计算attention，我们也称这种Attention为Causal Attention。矩阵计算上通过一个下三角的Causal Attention Mas...</div></div></div></a><a class="pagination-related" href="/p/b74c39c6.html" title="Attention为什么要除以根号d"><img class="cover" src="/images/attention_is_all_you_need_attention.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-31</div><div class="info-item-2">Attention为什么要除以根号d</div></div><div class="info-2"><div class="info-item-1">\[Attention(Q,K,V) = softmax(\frac{QK^T}{\sqrt{d}})V\] [《Attention is All Your Need》](https://arxiv.org/pdf/1706.03762)论文中给出了一个粗略的答案:- 当向量维度变大的时候，softmax 函数会造成梯度消失问题，所以设置了一个 temperature 来缓解这个问题。这里 temperature 被设置为了根号d   为什么会导致梯度消失？ 1. 如果 d 变大，q 和 k 点积的方差会变大2. 方差变大会导致向量之间元素的差值变大3. 元素的差值变大会导致 softmax 退化为 argmax, 也就是最大值 softmax 后的值为 1， 其他值则为04. softmax 只有一个值为 1 的元素，其他都为 0 的话，反向传播的梯度会变为 0, 也就是所谓的梯度消失  第一点：d 变大，方差会变大 假设 q 和 k 的向量长度为 \(d_k\), 独立同分布，均值为0，方差为1。则 q 和 k 的点积的方差为： \[Var(q \cdot k^T) = Va...</div></div></div></a><a class="pagination-related" href="/p/1047b7d4.html" title="模型推理中的参数设置：topk、topp、temperature"><img class="cover" src="/images/beamsearch_human.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-06</div><div class="info-item-2">模型推理中的参数设置：topk、topp、temperature</div></div><div class="info-2"><div class="info-item-1">大模型为什么会重复 大模型有时候会输出重复的内容。有的是段落间的重复，有时候甚至是字符级别的重复。 为什么会重复  大模型有点像是在做成语接龙  《A Theoretical Analysis of the Repetition Problem in Text Generation》  论文中对重复概率进行了建模，得出的结论是模型重复问题是存在理论上的上界的，虽然可以通过很多方法降低这个上界，但是还是有几率发生。 作者认为，重复问题是由于我们语言本身的特性所导致的。一个主要原因是存在太多单词以高概率预测同一个单词。因此，很容易回到那个单词并形成重复，这个被定义为 high inflow 问题。  【举例】成语接龙 当我们进行成语接龙的时候，通过最后一个字要预测出以这个字开头的一个成语，但是成语本来就不多，所以很容易就循环上了。 对于大模型来说，有些词作为下一个词出现的概率就是更高，所以也就容易陷入成语接龙那样的循环。  归纳头(induction heads) Anthropic 的工作人员对一个迷你的 transformers 进行了研究，建模了一个数学框架来解释 transf...</div></div></div></a><a class="pagination-related" href="/p/ac08e4b6.html" title="model.eval()、model.train()、torch.no_grad()、torch.inference_mode()"><img class="cover" src="/img/coffee.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-06</div><div class="info-item-2">model.eval()、model.train()、torch.no_grad()、torch.inference_mode()</div></div><div class="info-2"><div class="info-item-1">model.train() 和 model.eval()  model.train() -&gt; train mode model.eval() -&gt; eval mode  为什么要有这两种模式  因为模型中的有些模块在训练和预测不一致导致的。典型的模块就是 BatchNorm 和 Dropout。 BatchNorm 对于 BatchNorm 来说，训练的时候其实并不关心整体样本的均值和方差，只需要在当前 batch内稳定训练就可以了。 但是预测的时候，也必须得找一个均值和方差。那最好的选择就是通过整体的样本来进行估计（真正推理过程中貌似很难知道整体样本）。 但是这里面又有一些细节，比如原始论文中训练时方差用的是有偏估计，但是推理的时候用的是无偏估计。这个问题在几年前一直是个讨论的热点。  https://github.com/pytorch/pytorch/issues/1410  Dropout 训练的时候会随机 drop 一些神经元，但是预测的时候则是使用全部的神经元然后进行计算。 正是由于这种训练和预测的不一致性，就导致我们必须要告诉模型，什么时候是训练的状态，...</div></div></div></a><a class="pagination-related" href="/p/1217c726.html" title="神经网络中的权重共享"><img class="cover" src="/images/MobileLLM.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-06</div><div class="info-item-2">神经网络中的权重共享</div></div><div class="info-2"><div class="info-item-1">权重共享  权重共享（Weight Sharing）就是在模型的不同部分使用相同参数的技术。有时候也叫 Parameter sharing, 或者 Weight Tying  权重共享的优缺点  参考Weight Tying部分  优点：  可学习的参数变少，模型更容易训练，收敛更快 在内存受限、需要通信的推理场景，能够加快推理速度 权重共享有一定的正则化的作用，因为可学习的参数变少了 -&gt; 相当于提升了模型的泛化能力。这个理论可以从 Bias Variance Trade-off 的角度来证明（码农要术：机器学习篇：泛化挑战）  缺点：  一些权重可能理论上在完成任务的功能上就是正交的，共享之后可能会有新的问题。比如 词向量与 LM Head 的共享可能导致各向异性的问题  神经网络中常见的一些权重共享 基于位置的共享 CNN 中，同一个卷积核的权重在整个图像的不同位置是共享的。而 Transformers 中的 FNN 层也类似，序列的不同位置共享 MLP。 嵌入层和输出层权重共享 即常说的 Weight Tying, 将词向量与最后的 lm head 的权重进行共享。...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar-modified.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">DouDou.Ybqu</div><div class="author-info-description">I always want to calm down and write something.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">31</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">29</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">31</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ybqu"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#transformers-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8-qkv-attention"><span class="toc-number">1.</span> <span class="toc-text">Transformers 为什么采用
+QKV Attention</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-attention-%E6%9C%80%E5%90%8E%E9%87%87%E7%94%A8%E4%BA%86-dot-product-%E8%80%8C%E4%B8%8D%E6%98%AF-addition"><span class="toc-number">2.</span> <span class="toc-text">为什么
+Attention 最后采用了 Dot Product 而不是 Addition</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#attention-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8-multi-head-"><span class="toc-number">3.</span> <span class="toc-text">Attention 为什么使用 Multi
+Head ?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#mha--gqa-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">MHA &amp; GQA 代码实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#refrence--%E8%BF%9B%E4%B8%80%E6%AD%A5%E9%98%85%E8%AF%BB"><span class="toc-number">5.</span> <span class="toc-text">Refrence &amp;&amp; 进一步阅读</span></a></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/p/ceb622c4.html" title="Transformers中的Attention实现细节"><img src="/images/transformers-attention.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Transformers中的Attention实现细节"></a><div class="content"><a class="title" href="/p/ceb622c4.html" title="Transformers中的Attention实现细节">Transformers中的Attention实现细节</a><time datetime="2025-09-09T15:43:31.000Z" title="发表于 2025-09-09 23:43:31">2025-09-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/ec99b0e4.html" title="DeepSeek-MLA在prefill和decode时算子不同根本原因"><img src="/images/MLA%EF%BC%8CMHA%EF%BC%8CGQA%EF%BC%8CMQA%E5%AF%B9%E6%AF%94%E5%9B%BE.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="DeepSeek-MLA在prefill和decode时算子不同根本原因"></a><div class="content"><a class="title" href="/p/ec99b0e4.html" title="DeepSeek-MLA在prefill和decode时算子不同根本原因">DeepSeek-MLA在prefill和decode时算子不同根本原因</a><time datetime="2025-08-31T08:31:34.000Z" title="发表于 2025-08-31 16:31:34">2025-08-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/94d94980.html" title="Deepseek-MLA"><img src="/images/MLA%EF%BC%8CMHA%EF%BC%8CGQA%EF%BC%8CMQA%E5%AF%B9%E6%AF%94%E5%9B%BE.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Deepseek-MLA"></a><div class="content"><a class="title" href="/p/94d94980.html" title="Deepseek-MLA">Deepseek-MLA</a><time datetime="2025-08-31T08:19:58.000Z" title="发表于 2025-08-31 16:19:58">2025-08-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/b74c39c6.html" title="Attention为什么要除以根号d"><img src="/images/attention_is_all_you_need_attention.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Attention为什么要除以根号d"></a><div class="content"><a class="title" href="/p/b74c39c6.html" title="Attention为什么要除以根号d">Attention为什么要除以根号d</a><time datetime="2025-08-31T08:07:48.000Z" title="发表于 2025-08-31 16:07:48">2025-08-31</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/p/ceb622c4.html" title="Transformers中的Attention实现细节"><img src="/images/transformers-attention.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Transformers中的Attention实现细节"/></a><div class="content"><a class="title" href="/p/ceb622c4.html" title="Transformers中的Attention实现细节">Transformers中的Attention实现细节</a><time datetime="2025-09-09T15:43:31.000Z" title="发表于 2025-09-09 23:43:31">2025-09-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/2e71c2ed.html" title="梯度下降推导"><img src="/images/%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="梯度下降推导"/></a><div class="content"><a class="title" href="/p/2e71c2ed.html" title="梯度下降推导">梯度下降推导</a><time datetime="2025-09-09T14:52:28.000Z" title="发表于 2025-09-09 22:52:28">2025-09-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/c46399b8.html" title="信息熵、交叉熵、KL散度的具体含义"><img src="/images/%E4%BA%A4%E5%8F%89%E7%86%B5%E6%8D%9F%E5%A4%B1.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="信息熵、交叉熵、KL散度的具体含义"/></a><div class="content"><a class="title" href="/p/c46399b8.html" title="信息熵、交叉熵、KL散度的具体含义">信息熵、交叉熵、KL散度的具体含义</a><time datetime="2025-09-09T14:31:58.000Z" title="发表于 2025-09-09 22:31:58">2025-09-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/6ad6791a.html" title="强化学习（一）：PPO、DPO梳理"><img src="/images/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%E7%9A%84%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="强化学习（一）：PPO、DPO梳理"/></a><div class="content"><a class="title" href="/p/6ad6791a.html" title="强化学习（一）：PPO、DPO梳理">强化学习（一）：PPO、DPO梳理</a><time datetime="2025-09-08T14:42:04.000Z" title="发表于 2025-09-08 22:42:04">2025-09-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/p/1047b7d4.html" title="模型推理中的参数设置：topk、topp、temperature"><img src="/images/beamsearch_human.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="模型推理中的参数设置：topk、topp、temperature"/></a><div class="content"><a class="title" href="/p/1047b7d4.html" title="模型推理中的参数设置：topk、topp、temperature">模型推理中的参数设置：topk、topp、temperature</a><time datetime="2025-09-06T15:37:36.000Z" title="发表于 2025-09-06 23:37:36">2025-09-06</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-flex"><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">LLMs</div><div class="footer-flex-content"><a href="https://docs.pytorch.org/tutorials/" target="_blank" title="pytorch">pytorch</a><a href="https://huggingface.co/" target="_blank" title="Hugging Face">Hugging Face</a><a href="https://modelscope.cn/home" target="_blank" title="ModelScope">ModelScope</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">Paper Reading</div><div class="footer-flex-content"><a href="https://spaces.ac.cn/" target="_blank" title="苏剑林 | 科学空间">苏剑林 | 科学空间</a><a href="https://arxiv.org/" target="_blank" title="arXiv">arXiv</a><a href="https://papers.cool/" target="_blank" title="Cool Papers">Cool Papers</a><a href="https://www.aclweb.org/portal/" target="_blank" title="Aclweb">Aclweb</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">扩展</div><div class="footer-flex-content"><a href="/Gallery/" target="_blank" title="图库">图库</a><a href="/messageboard/" target="_blank" title="留言板">留言板</a><a href="/link/" target="_blank" title="友链">友链</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">框架</div><div class="footer-flex-content"><a href="https://hexo.io/zh-cn/" target="_blank" title="Hexo">Hexo</a><a href="https://butterfly.js.org/" target="_blank" title="Butterfly">Butterfly</a></div></div></div><div class="footer-flex-items"><div class="footer-flex-item"><div class="footer-flex-title">更多</div><div class="footer-flex-content"><div><img src='/img/avatar.png' alt='JerryC' width='100px' height='100px'></div></div></div></div></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By DouDou.Ybqu</span><span class="framework-info"><span class="footer-separator">|</span><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.4.3</a></span></div><div class="footer_custom_text"><a href="icp链接"><img class="icp-icon" src="icp图片"><span>京ICP备-xxxxxxx号</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const applyThemeDefaultsConfig = theme => {
+    if (theme === 'dark-mode') {
+      Chart.defaults.color = "rgba(255, 255, 255, 0.8)"
+      Chart.defaults.borderColor = "rgba(255, 255, 255, 0.2)"
+      Chart.defaults.scale.ticks.backdropColor = "transparent"
+    } else {
+      Chart.defaults.color = "rgba(0, 0, 0, 0.8)"
+      Chart.defaults.borderColor = "rgba(0, 0, 0, 0.1)"
+      Chart.defaults.scale.ticks.backdropColor = "transparent"
+    }
+  }
+
+  // Recursively traverse the config object and automatically apply theme-specific color schemes
+  const applyThemeConfig = (obj, theme) => {
+    if (typeof obj !== 'object' || obj === null) return
+
+    Object.keys(obj).forEach(key => {
+      const value = obj[key]
+      // If the property is an object and has theme-specific options, apply them
+      if (typeof value === 'object' && value !== null) {
+        if (value[theme]) {
+          obj[key] = value[theme] // Apply the value for the current theme
+        } else {
+          // Recursively process child objects
+          applyThemeConfig(value, theme)
+        }
+      }
+    })
+  }
+
+  const runChartJS = ele => {
+    window.loadChartJS = true
+
+    Array.from(ele).forEach((item, index) => {
+      const chartSrc = item.firstElementChild
+      const chartID = item.getAttribute('data-chartjs-id') || ('chartjs-' + index) // Use custom ID or default ID
+      const width = item.getAttribute('data-width')
+      const existingCanvas = document.getElementById(chartID)
+
+      // If a canvas already exists, remove it to avoid rendering duplicates
+      if (existingCanvas) {
+          existingCanvas.parentNode.remove()
+      }
+
+      const chartDefinition = chartSrc.textContent
+      const canvas = document.createElement('canvas')
+      canvas.id = chartID
+
+      const div = document.createElement('div')
+      div.className = 'chartjs-wrap'
+
+      if (width) {
+        div.style.width = width
+      }
+
+      div.appendChild(canvas)
+      chartSrc.insertAdjacentElement('afterend', div)
+
+      const ctx = document.getElementById(chartID).getContext('2d')
+
+      const config = JSON.parse(chartDefinition)
+
+      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark-mode' : 'light-mode'
+
+      // Set default styles (initial setup)
+      applyThemeDefaultsConfig(theme)
+
+      // Automatically traverse the config and apply dual-mode color schemes
+      applyThemeConfig(config, theme)
+
+      new Chart(ctx, config)
+    })
+  }
+
+  const loadChartJS = () => {
+    const chartJSEle = document.querySelectorAll('#article-container .chartjs-container')
+    if (chartJSEle.length === 0) return
+
+    window.loadChartJS ? runChartJS(chartJSEle) : btf.getScript('https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js').then(() => runChartJS(chartJSEle))
+  }
+
+  // Listen for theme change events
+  btf.addGlobalFn('themeChange', loadChartJS, 'chartjs')
+  btf.addGlobalFn('encrypt', loadChartJS, 'chartjs')
+
+  window.pjax ? loadChartJS() : document.addEventListener('DOMContentLoaded', loadChartJS)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-mapping":"url","data-category":"Announcements","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'ybqu/giscus',
+      'data-repo-id': 'R_kgDOPm8Q3A',
+      'data-category-id': 'DIC_kwDOPm8Q3M4CuxXc',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="false"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
