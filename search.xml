@@ -1829,21 +1829,6 @@ Autograd 的梯度计算机制，所以当试图修改梯度计算状态的时�
       </tags>
   </entry>
   <entry>
-    <title>vscode：python-debug配置</title>
-    <url>/p/2390d019.html</url>
-    <content><![CDATA[<h3 id="python-debug-setting">python debug setting</h3>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;one-gpu-debug&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;debugpy&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;cwd&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/&#123;project_name&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;program&quot;</span><span class="punctuation">:</span> <span class="string">&quot;debug.py&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;console&quot;</span><span class="punctuation">:</span> <span class="string">&quot;integratedTerminal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span>  </span><br><span class="line">        <span class="attr">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;justMyCode&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;--args1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;xxx&quot;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;torchrun-debug&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;debugpy&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;module&quot;</span><span class="punctuation">:</span> <span class="string">&quot;torch.distributed.run&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;cwd&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/&#123;project_name&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;console&quot;</span><span class="punctuation">:</span> <span class="string">&quot;integratedTerminal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span>  </span><br><span class="line">        <span class="attr">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0,1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;subProcess&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;justMyCode&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="comment">// &quot;--master_addr&quot;, &quot;127.0.0.1&quot;,</span></span><br><span class="line">        <span class="string">&quot;--nproc_per_node=2&quot;</span><span class="punctuation">,</span>  <span class="comment">// 进程数</span></span><br><span class="line">        <span class="comment">// &quot;--nnodes=1&quot;, &quot;--node_rank=0&quot;,</span></span><br><span class="line">        <span class="string">&quot;debug.py&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;--args1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;xxx&quot;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>软件配置</category>
-        <category>vscode</category>
-      </categories>
-      <tags>
-        <tag>软件配置</tag>
-        <tag>vscode</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>一些面试题集合-1</title>
     <url>/p/4d14af89.html</url>
     <content><![CDATA[<p><a href="https://spaces.ac.cn/archives/9529">苏剑林｜为什么现在的LLM都是Decoder-only的架构？</a>
@@ -2127,6 +2112,117 @@ KL 惩罚系数<span class="math inline">\(\beta\)</span></li>
         <tag>LLMs</tag>
         <tag>Transformers</tag>
         <tag>面试题集</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vscode：python-debug配置</title>
+    <url>/p/2390d019.html</url>
+    <content><![CDATA[<h3 id="python-debug-setting">python debug setting</h3>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;one-gpu-debug&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;debugpy&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;cwd&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/&#123;project_name&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;program&quot;</span><span class="punctuation">:</span> <span class="string">&quot;debug.py&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;console&quot;</span><span class="punctuation">:</span> <span class="string">&quot;integratedTerminal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span>  </span><br><span class="line">        <span class="attr">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;justMyCode&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;--args1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;xxx&quot;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;torchrun-debug&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;debugpy&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;module&quot;</span><span class="punctuation">:</span> <span class="string">&quot;torch.distributed.run&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;cwd&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/&#123;project_name&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;console&quot;</span><span class="punctuation">:</span> <span class="string">&quot;integratedTerminal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span>  </span><br><span class="line">        <span class="attr">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0,1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;subProcess&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;justMyCode&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="comment">// &quot;--master_addr&quot;, &quot;127.0.0.1&quot;,</span></span><br><span class="line">        <span class="string">&quot;--nproc_per_node=2&quot;</span><span class="punctuation">,</span>  <span class="comment">// 进程数</span></span><br><span class="line">        <span class="comment">// &quot;--nnodes=1&quot;, &quot;--node_rank=0&quot;,</span></span><br><span class="line">        <span class="string">&quot;debug.py&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;--args1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;xxx&quot;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>软件配置</category>
+        <category>vscode</category>
+      </categories>
+      <tags>
+        <tag>软件配置</tag>
+        <tag>vscode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>为什么需要KVCache</title>
+    <url>/p/428f41e1.html</url>
+    <content><![CDATA[<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">KV Cache 是 Transformer 标配的推理加速功能，transformer 官方 use_cache 这个参数默认是 True，但是它只能用于 Decoder 架构的模型，这是因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 K 和 V 可以缓存起来。</span><br></pre></td></tr></table></figure>
+
+<p>我们先看一下不使用 KV Cache
+的推理过程。假设模型最终生成了“遥遥领先”4个字</p>
+<p>当模型生成第一个“遥”字时，input=<code>"&lt;s&gt;"</code>,
+<code>"&lt;s&gt;"</code>是起始字符。 Attention 的计算如下： <img src="/p/428f41e1/attention_woCache_example_step1.png"></p>
+<p>为了看上去方便，我们暂时忽略 scale 项<span class="math inline">\(\sqrt{d}\)</span></p>
+<p>如上图所示，最终 Attention 的计算公式如下，（softmaxed
+表示已经按行进行了softmax）: <span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V ) =
+softmax(\textcolor{orange}{Q_1}K_1^T)\vec{V_1} =
+softmaxed(\textcolor{orange}{Q_1}K_1^T)\vec{V_1}\]</span></p>
+<hr>
+<p>当模型生成第二个“遥”字时，input=<code>"&lt;s&gt; 遥"</code>。Attention
+的计算如下： <img src="/p/428f41e1/attention_woCache_example_step2.png"></p>
+<p>当 <span class="math inline">\(QK^T\)</span> 变为矩阵时，softmax
+会针对<strong>行</strong>进行计算。写详细一点如下 <img src="/p/428f41e1/attention_cacl_step2.png"></p>
+<p>假设 <span class="math inline">\(\textcolor{orange}{Att_1}(Q, K,
+V)\)</span> 表示 Attention 的第一行，<span class="math inline">\(\textcolor{orange}{Att_2}(Q, K, V)\)</span>表示
+Attention 的第二行，则根据上面推 导， 其计算公式为： <span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V) =
+softmaxed(\textcolor{orange}{Q_1}K^T_1)\vec{V_1}\]</span> <span class="math display">\[\textcolor{red}{Att_2}(Q, K, V) =
+softmaxed(\textcolor{red}{Q_2}K^T)1)\vec{V_1} +
+softmaxed(\textcolor{red}{Q_2}K^T_2)\vec{V_2}\]</span></p>
+<p>你会发现，由于<span class="math inline">\(Q_1K^T_1\)</span>这个值会mask掉</p>
+<ul>
+<li><span class="math inline">\(Q_1\)</span>
+在第二步参与的计算与第一步是一样的，而且第二步生成的 <span class="math inline">\(V_1\)</span> 也仅仅依赖于<span class="math inline">\(Q_1\)</span>，与<span class="math inline">\(Q_2\)</span>毫无关系</li>
+<li><span class="math inline">\(V_2\)</span>的计算也仅仅依赖于<span class="math inline">\(Q_2\)</span>，与<span class="math inline">\(Q_1\)</span>毫无关系</li>
+</ul>
+<hr>
+<p>当模型生成第三个“领”字时，input=<code>"&lt;s&gt; 遥遥"</code>。Attention的计算如下：
+<img src="/p/428f41e1/attention_woCache_example_step3.png"></p>
+<p>详细的推导参考第二步，其计算公式为： <span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V) =
+softmaxed(\textcolor{orange}{Q_1}K^T_1)\vec{V_1}\]</span> <span class="math display">\[\textcolor{red}{Att_2}(Q, K, V) =
+softmaxed(\textcolor{red}{Q_2}K^T)1)\vec{V_1} +
+softmaxed(\textcolor{red}{Q_2}K^T_2)\vec{V_2}\]</span> <span class="math display">\[\textcolor{darkred}{Att_3}(Q, K, V) =
+softmaxed(\textcolor{darkred}{Q_3}K^T)1)\vec{V_1} +
+softmaxed(\textcolor{darkred}{Q_3}K^T_2)\vec{V_2} +
+softmaxed(\textcolor{darkred}{Q_3}K^T_3)\vec{V_3}\]</span></p>
+<p>同样的，<span class="math inline">\(Att_k\)</span> 只与 <span class="math inline">\(Q_k\)</span> 有关</p>
+<hr>
+<p>当模型生成第四个“先”字时，input=<code>"&lt;s&gt; 遥遥领"</code>。Attention
+的计算如下： <img src="/p/428f41e1/attention_woCache_example_step4.png"></p>
+<p><span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V) =
+softmaxed(\textcolor{orange}{Q_1}K^T_1)\vec{V_1}\]</span> <span class="math display">\[\textcolor{red}{Att_2}(Q, K, V) =
+softmaxed(\textcolor{red}{Q_2}K^T)1)\vec{V_1} +
+softmaxed(\textcolor{red}{Q_2}K^T_2)\vec{V_2}\]</span> <span class="math display">\[\textcolor{darkred}{Att_3}(Q, K, V) =
+softmaxed(\textcolor{darkred}{Q_3}K^T)1)\vec{V_1} +
+softmaxed(\textcolor{darkred}{Q_3}K^T_2)\vec{V_2} +
+softmaxed(\textcolor{darkred}{Q_3}K^T_3)\vec{V_3}\]</span> <span class="math display">\[\textcolor{yellow}{Att_4}(Q, K, V) =
+softmaxed(\textcolor{yellow}{Q_4}K^T)1)\vec{V_1} +
+softmaxed(\textcolor{yellow}{Q_4}K^T_2)\vec{V_2} +
+softmaxed(\textcolor{yellow}{Q_4}K^T_3)\vec{V_3} +
+softmaxed(\textcolor{yellow}{Q_4}K^T_4)\vec{V_4}\]</span></p>
+<p>看上面图和公式，我们可以得出结论：</p>
+<ol type="1">
+<li>当前计算方式存在大量冗余计算</li>
+<li><span class="math inline">\(Att_k\)</span> 只与 <span class="math inline">\(Q_k\)</span> 有关</li>
+<li>推理第 <span class="math inline">\(x_k\)</span>
+个字符的时候只需要输入字符 <span class="math inline">\(x_{k−1}\)</span>
+即可</li>
+</ol>
+<p>我们每一步其实之需要根据 <span class="math inline">\(Q_k\)</span>
+计算 <span class="math inline">\(Att_k\)</span> 就可以，之前已经计算的
+Attention 完全不需要重新计算。但是 <span class="math inline">\(K\)</span> 和 <span class="math inline">\(V\)</span>
+是全程参与计算的，所以这里我们需要把每一步的 <span class="math inline">\(K\)</span>, <span class="math inline">\(V\)</span>
+缓存起来，所以说叫 KV Cache。</p>
+<blockquote>
+<p>使用 KV Cache 和不使用的对比</p>
+</blockquote>
+<p>下面是 gpt 里面 KV Cache 的实现。就是 concat 操作而已</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py#L318C1-L331C97</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> layer_past <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">    past_key, past_value = layer_past</span><br><span class="line">    key   = torch.cat((past_key, key), dim=-<span class="number">2</span>)</span><br><span class="line">    value = torch.cat((past_value, value), dim=-<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> use_cache <span class="keyword">is</span> <span class="literal">True</span>:</span><br><span class="line">    present = (key, value)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    present = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="variable language_">self</span>.reorder_and_upcast_attn:</span><br><span class="line">    attn_output, attn_weights = <span class="variable language_">self</span>._upcast_and_reordered_attn(query, key, value, attention_mask, head_mask)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    attn_output, attn_weights = <span class="variable language_">self</span>._attn(query, key, value, attention_mask, head_mask)</span><br></pre></td></tr></table></figure>
+
+<p>需要注意当 sequence 特别长的时候，KV Cache 其实还是个 Memory 刺客</p>
+<blockquote>
+<p>比如 batch_size=32, head=32, layer=32, dim_size=4096,
+seq_length=2048, float32 类型，则需要占用的显存为 2 * 32 * 4096 * 2048 *
+32 * 4 / 1024 / 1024 / 1024 = 64G</p>
+</blockquote>
+<h2 id="todo">TODO</h2>
+<p>针对内存的问题，学者们研发出了 Page Attention 之类的方法来优化</p>
+<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+]]></content>
+      <categories>
+        <category>LLMs</category>
+        <category>推理优化</category>
+        <category>KVCache</category>
+      </categories>
+      <tags>
+        <tag>LLMs</tag>
+        <tag>推理优化</tag>
+        <tag>KVCache</tag>
       </tags>
   </entry>
   <entry>
@@ -2415,99 +2511,242 @@ KL 惩罚系数<span class="math inline">\(\beta\)</span></li>
       </tags>
   </entry>
   <entry>
-    <title>为什么需要KVCache</title>
-    <url>/p/428f41e1.html</url>
-    <content><![CDATA[<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">KV Cache 是 Transformer 标配的推理加速功能，transformer 官方 use_cache 这个参数默认是 True，但是它只能用于 Decoder 架构的模型，这是因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 K 和 V 可以缓存起来。</span><br></pre></td></tr></table></figure>
+    <title>信息熵、交叉熵、KL散度的具体含义</title>
+    <url>/p/c46399b8.html</url>
+    <content><![CDATA[<h2 id="交叉熵-cross-entropykl-散度">交叉熵 (cross entropy)，KL
+散度</h2>
+<p>交叉熵一看就是个信息论的概念，为什么变成了大模型最常用的损失函数了呢？交叉熵的值到底有什么含义呢？与
+KL 散度又有什么关系呢？</p>
+<h3 id="信息熵">信息熵</h3>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">信息熵就是某个随机事件的信息的期望值，同时也是最优编码的期望长度</span><br></pre></td></tr></table></figure>
 
-<p>我们先看一下不使用 KV Cache
-的推理过程。假设模型最终生成了“遥遥领先”4个字</p>
-<p>当模型生成第一个“遥”字时，input=<code>"&lt;s&gt;"</code>,
-<code>"&lt;s&gt;"</code>是起始字符。 Attention 的计算如下： <img src="/p/428f41e1/attention_woCache_example_step1.png"></p>
-<p>为了看上去方便，我们暂时忽略 scale 项<span class="math inline">\(\sqrt{d}\)</span></p>
-<p>如上图所示，最终 Attention 的计算公式如下，（softmaxed
-表示已经按行进行了softmax）: <span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V ) =
-softmax(\textcolor{orange}{Q_1}K_1^T)\vec{V_1} =
-softmaxed(\textcolor{orange}{Q_1}K_1^T)\vec{V_1}\]</span></p>
-<hr>
-<p>当模型生成第二个“遥”字时，input=<code>"&lt;s&gt; 遥"</code>。Attention
-的计算如下： <img src="/p/428f41e1/attention_woCache_example_step2.png"></p>
-<p>当 <span class="math inline">\(QK^T\)</span> 变为矩阵时，softmax
-会针对<strong>行</strong>进行计算。写详细一点如下 <img src="/p/428f41e1/attention_cacl_step2.png"></p>
-<p>假设 <span class="math inline">\(\textcolor{orange}{Att_1}(Q, K,
-V)\)</span> 表示 Attention 的第一行，<span class="math inline">\(\textcolor{orange}{Att_2}(Q, K, V)\)</span>表示
-Attention 的第二行，则根据上面推 导， 其计算公式为： <span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V) =
-softmaxed(\textcolor{orange}{Q_1}K^T_1)\vec{V_1}\]</span> <span class="math display">\[\textcolor{red}{Att_2}(Q, K, V) =
-softmaxed(\textcolor{red}{Q_2}K^T)1)\vec{V_1} +
-softmaxed(\textcolor{red}{Q_2}K^T_2)\vec{V_2}\]</span></p>
-<p>你会发现，由于<span class="math inline">\(Q_1K^T_1\)</span>这个值会mask掉</p>
-<ul>
-<li><span class="math inline">\(Q_1\)</span>
-在第二步参与的计算与第一步是一样的，而且第二步生成的 <span class="math inline">\(V_1\)</span> 也仅仅依赖于<span class="math inline">\(Q_1\)</span>，与<span class="math inline">\(Q_2\)</span>毫无关系</li>
-<li><span class="math inline">\(V_2\)</span>的计算也仅仅依赖于<span class="math inline">\(Q_2\)</span>，与<span class="math inline">\(Q_1\)</span>毫无关系</li>
-</ul>
-<hr>
-<p>当模型生成第三个“领”字时，input=<code>"&lt;s&gt; 遥遥"</code>。Attention的计算如下：
-<img src="/p/428f41e1/attention_woCache_example_step3.png"></p>
-<p>详细的推导参考第二步，其计算公式为： <span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V) =
-softmaxed(\textcolor{orange}{Q_1}K^T_1)\vec{V_1}\]</span> <span class="math display">\[\textcolor{red}{Att_2}(Q, K, V) =
-softmaxed(\textcolor{red}{Q_2}K^T)1)\vec{V_1} +
-softmaxed(\textcolor{red}{Q_2}K^T_2)\vec{V_2}\]</span> <span class="math display">\[\textcolor{darkred}{Att_3}(Q, K, V) =
-softmaxed(\textcolor{darkred}{Q_3}K^T)1)\vec{V_1} +
-softmaxed(\textcolor{darkred}{Q_3}K^T_2)\vec{V_2} +
-softmaxed(\textcolor{darkred}{Q_3}K^T_3)\vec{V_3}\]</span></p>
-<p>同样的，<span class="math inline">\(Att_k\)</span> 只与 <span class="math inline">\(Q_k\)</span> 有关</p>
-<hr>
-<p>当模型生成第四个“先”字时，input=<code>"&lt;s&gt; 遥遥领"</code>。Attention
-的计算如下： <img src="/p/428f41e1/attention_woCache_example_step4.png"></p>
-<p><span class="math display">\[\textcolor{orange}{Att_1}(Q, K, V) =
-softmaxed(\textcolor{orange}{Q_1}K^T_1)\vec{V_1}\]</span> <span class="math display">\[\textcolor{red}{Att_2}(Q, K, V) =
-softmaxed(\textcolor{red}{Q_2}K^T)1)\vec{V_1} +
-softmaxed(\textcolor{red}{Q_2}K^T_2)\vec{V_2}\]</span> <span class="math display">\[\textcolor{darkred}{Att_3}(Q, K, V) =
-softmaxed(\textcolor{darkred}{Q_3}K^T)1)\vec{V_1} +
-softmaxed(\textcolor{darkred}{Q_3}K^T_2)\vec{V_2} +
-softmaxed(\textcolor{darkred}{Q_3}K^T_3)\vec{V_3}\]</span> <span class="math display">\[\textcolor{yellow}{Att_4}(Q, K, V) =
-softmaxed(\textcolor{yellow}{Q_4}K^T)1)\vec{V_1} +
-softmaxed(\textcolor{yellow}{Q_4}K^T_2)\vec{V_2} +
-softmaxed(\textcolor{yellow}{Q_4}K^T_3)\vec{V_3} +
-softmaxed(\textcolor{yellow}{Q_4}K^T_4)\vec{V_4}\]</span></p>
-<p>看上面图和公式，我们可以得出结论：</p>
+<p>1948年，克劳德·香农发表了一篇论文<a href="https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf">《A
+Mathematical Theory of
+Communication》</a>，结果一年以后，这篇论文被改成了<a href="https://pure.mpg.de/rest/items/item_2383164/component/file_2383163/content">《The
+Mathematical Theory of Communication》</a></p>
+<p>从 A 变成了 The，一门新的学科：信息论，诞生了。</p>
+<p>信息论是一门很重要的学科，解决了一些很重要的问题：<mark class="hl-label red">比如信息应该如何度量？信息如果需要通信，那么最优的编码方式是什么？</mark></p>
+<p><strong>+ 信息如何度量？</strong><br>
+如果某件事情大概率发生，当这件事情发生的时候，携带的信息量是很少的。</p>
+<p>举个例子：国足输球的概率是95%。当国足又输了的时候，并没有什么信息量。但是如果国足赢球了，那这个信息量大的惊人。</p>
+<p>定义信息度量为<span class="math inline">\(I(p)\)</span>，根据上面的例子可以看到，<span class="math inline">\(I(p)\)</span>满足以下条件：</p>
 <ol type="1">
-<li>当前计算方式存在大量冗余计算</li>
-<li><span class="math inline">\(Att_k\)</span> 只与 <span class="math inline">\(Q_k\)</span> 有关</li>
-<li>推理第 <span class="math inline">\(x_k\)</span>
-个字符的时候只需要输入字符 <span class="math inline">\(x_{k−1}\)</span>
-即可</li>
+<li>和概率p成反比，p越大则<span class="math inline">\(I(p)\)</span>越小</li>
+<li>当p=1时，<span class="math inline">\(I(p)=0\)</span>：总是发生的事情没有任何信息量</li>
+<li><span class="math inline">\(I(p_1\cdot
+p_2)=I(p_1)+I(p_2)\)</span>：两个独立的事件同时发生产生的信息，应该等于各自信息的和</li>
 </ol>
-<p>我们每一步其实之需要根据 <span class="math inline">\(Q_k\)</span>
-计算 <span class="math inline">\(Att_k\)</span> 就可以，之前已经计算的
-Attention 完全不需要重新计算。但是 <span class="math inline">\(K\)</span> 和 <span class="math inline">\(V\)</span>
-是全程参与计算的，所以这里我们需要把每一步的 <span class="math inline">\(K\)</span>, <span class="math inline">\(V\)</span>
-缓存起来，所以说叫 KV Cache。</p>
+<p>最后香农给出的定义是<span class="math inline">\(I(p)=-log
+p\)</span></p>
+<p><span class="math inline">\(I(p)\)</span>可以用来表示一个概率为p的事件发生后的产生信息或者不确定性。那么假设某个随机事件的概率分布为p，那么其信息（或者不确定性）的期望值应该为
+<span class="math display">\[H(p)=\sum_{i}p_i(-log
+p_i)=-\sum_{i}p_ilogp_i\]</span></p>
+<p>这就是信息熵：<code>衡量的是某个随机事件的信息的期望值</code></p>
+<p><strong>+ 最优前缀编码</strong></p>
+<p>任何理论的产生都是为了解决某一个具体的问题。信息熵的提出在香农的业务场景中，被用来解决通信的最优前缀编码问题，具体点就是数据应该如何编码才能使编码后的长度最短。因为相同的信息，越短的编码就意味着传输效率越高。</p>
+<p>比如胡适的日记，简化一下可以写成这样：<code>"打牌，打牌，上课，打牌，读书，打牌，上课，考试"</code></p>
+<p>最简单的编码方法就是按二进制编码，比如</p>
+<ul>
+<li>00 表示 打牌</li>
+<li>01 表示 上课</li>
+<li>10 表示 读书</li>
+<li>11 表示 考试</li>
+</ul>
+<p>这样这段文本可以编码为
+0000010010000111,长度为16，每个事件的平均编码长度为2</p>
+<p>有更优的编码么，之前读书时候学过的 Huffman 编码这不就用上了。用
+Huffman 编码如下：</p>
+<ul>
+<li>0 表示 打牌</li>
+<li>10 表示 上课</li>
+<li>110 表示 读书</li>
+<li>111 表示 考试</li>
+</ul>
+<p>利用这个编码，上面文本可以表示为：00100110010111,
+长度为14，每个事件的平均编码长度为1.75</p>
 <blockquote>
-<p>使用 KV Cache 和不使用的对比</p>
+<p><strong>如果知道一个事件的概率分布，其最优编码是多少？</strong></p>
+<p>Kralt Inequality
+给出了一组码字长度是否可能构成一个前缀码的必要条件<br>
+假设用 <strong>D元符号</strong> 编码，每个编码的长度分别为<span class="math inline">\(L_i\)</span>。则一个可用的前缀码必须满足： <span class="math display">\[\sum_i^n{D^{-L_i}}\le 1\]</span>
+于是最优前缀编码就变成了一个带约束的优化问题，优化目标为： <span class="math display">\[j=\sum{p_iL_i}+\lambda(\sum{D^{-L_i}}-1)\]</span>
+对上面的式子<span class="math inline">\(L_i\)</span>求偏导: <span class="math display">\[\frac{\partial J}{\partial L_i}=p_i-\lambda
+D^{-L_i}log_eD\]</span> 根据 Lagrange multipliers 算法，令其为0则得到
+<span class="math display">\[L_i=-log_D(\frac{p_i}{\lambda
+log_eD})\]</span> 然后求出 <span class="math inline">\(\lambda=\frac{1}{log_eD}\)</span>，带入上面的式子有
+<span class="math display">\[L_i^*=-log_DP_i\]</span> 如果有0和1两个 bit
+来编码，即D=2 可以发现，这个式子和信息函数一样：<span class="math inline">\(I(p)=L_i^*=-log P_i\)</span></p>
 </blockquote>
-<p>下面是 gpt 里面 KV Cache 的实现。就是 concat 操作而已</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py#L318C1-L331C97</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> layer_past <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">    past_key, past_value = layer_past</span><br><span class="line">    key   = torch.cat((past_key, key), dim=-<span class="number">2</span>)</span><br><span class="line">    value = torch.cat((past_value, value), dim=-<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> use_cache <span class="keyword">is</span> <span class="literal">True</span>:</span><br><span class="line">    present = (key, value)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    present = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="variable language_">self</span>.reorder_and_upcast_attn:</span><br><span class="line">    attn_output, attn_weights = <span class="variable language_">self</span>._upcast_and_reordered_attn(query, key, value, attention_mask, head_mask)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    attn_output, attn_weights = <span class="variable language_">self</span>._attn(query, key, value, attention_mask, head_mask)</span><br></pre></td></tr></table></figure>
+<p>所以信息熵也就是<strong>每个字符最优编码的期望长度</strong>，通过计算可以知道，<code>Huffman 编码</code>就是最优的前缀编码。</p>
+<blockquote>
+<p>这里举的例子有一定的特殊性，表示概率的分子都是2的倍数，所以能达到最优，现实生活中很难达到理论上最优的编码</p>
+</blockquote>
+<h3 id="交叉熵">交叉熵</h3>
+<p>又比如鲁迅的日记是这样的：<code>"上课，上课，打牌，上课，读书，上课，考试，读书"</code></p>
+<p>这份数据的最优编码的平均长度，用上面熵的公式可以求出为
+<strong>1.75</strong>。如果用胡适的最优编码来编码的话为：101001011010111110，长度为18，平均长度为
+<strong>2.25</strong>。这可比鲁迅自己的最优编码长了不少。</p>
+<p>这个非最优的平均长度其实就是交叉熵了。用公式表示为： <span class="math display">\[H(p,q)=-\sum_i^n{p_i log q_i}\]</span></p>
+<p>这里 p 可以认为是鲁迅所有事件的的概率分布，而 q
+可以认为是胡适的<br>
+所以交叉熵<span class="math inline">\(H(p,q)\)</span>有两种理解：</p>
+<ol type="1">
+<li>在p分布下，q分布定义的信息量的期望值</li>
+<li>在p分布下，使用基于q的最优编码方案的期望编码长度。除非两个分布相等，否则这个期望长度是冗余的</li>
+</ol>
+<blockquote>
+<p>站在通信的角度，由于采用了更低效的编码方式，这就意味着相同的信息需要更多的bit位来表示，所以采用
+q 编码是有信息丢失的。</p>
+</blockquote>
+<h3 id="kl-散度">KL 散度</h3>
+<p>交叉熵是在p分布下，使用基于q的最优编码方案的期望编码长度。当 p 和 q
+不相等时，这个期望长度是有冗余的，那么到底冗余了多少？这个冗余的数量就是
+KL 散度。 <span class="math display">\[\mathbb{KL}(p,q)=H(p,q)-H(p)\]</span></p>
+<p>所以 KL 散度也有两种理解方式：</p>
+<ol type="1">
+<li>在p分布下，使用基于q的最优编码方案的期望编码长度中冗余的 bit 数</li>
+<li>使用分布 q 来 表示 p 的时候，丢失的信息量</li>
+</ol>
+<p>基于上面的性质，KL
+散度有时候也会作为两个概率分布的差异性。<strong>但是这个差异并不是距离。因为
+KL 散度并不对称，KL(p,q) 和 KL(q,p) 并不总是相等的。</strong></p>
+<h3 id="mle-与-交叉熵">MLE 与 交叉熵</h3>
+<p>对于无监督学习来说，假设真实分布为 p，模型分布为
+q，样本中的数据是独立同分布的，则最大似然表示如下： <span class="math display">\[
+\begin{aligned}
+MLE = \underset{\theta}{\text{argmax}} \prod_i^n{q_\theta(x_i)} &amp;=
+\underset{\theta}{\text{argmax}} \sum_{i=1}^n{log q_\theta(x_i)}
+&amp;\text{取log为了稳定数值} \\
+&amp;= -\underset{\theta}{\text{argmin}} \sum_{i=1}^n{log q_\theta(x_i)}
+&amp;\text{-log q出现，最优编码/信息量} \\
+&amp;= -\underset{\theta}{\text{argmin}} \frac{1}{n}\sum_{i=1}^n{log
+q_\theta(x_i)} &amp;\text{加入常数不影响结果} \\
+&amp;= -\underset{\theta}{\text{argmin}} \sum_{i=1}^n{p(x_i)log
+q_\theta(x_i)} &amp;\text{转为期望} \\
+&amp;= \underset{\theta}{\text{argmin}} H(p,q_\theta)
+&amp;\textcolor{red}{\text{MLE等于最小化交叉熵}} \\
+&amp;= \underset{\theta}{\text{argmin}} \mathbb{KL}(p,q_\theta) + H(p)
+&amp;\text{H(p)和}\theta\text{没关系，可以去掉} \\
+&amp;= \underset{\theta}{\text{argmin}} \mathbb{KL}(p,q_\theta)
+&amp;\textcolor{red}{\text{MLE等于最小化KL散度}}
+\end{aligned}
+\]</span></p>
+<p>所以某种意义上说，机器学习就是在对数据进行最优编码。回想一下 交叉熵和
+KL 散度的意义，MLE 就等于最小化交叉熵 和 KL 散度。</p>
+<h3 id="压缩即智能">压缩即智能</h3>
+<blockquote>
+<p><a href="https://arxiv.org/pdf/2309.10668">《Language Modeling Is
+Compression》</a></p>
+</blockquote>
+<p>其实通过上面的描述，可以看出大模型的 loss
+其实就是在寻找最优编码。所以当我们把大量的无监督的语料扔给大模型后，其实就是在做<strong>数据压缩</strong>。</p>
+<p>甚至有一种比较新颖的方法，传统的一些压缩算法，也可以认为是一个生成模型，虽然这条路还没有完全走通，但是真的很有意思。</p>
+<p><a href="https://www.youtube.com/watch?v=AKMuA_TVz3A">2023年4月 Ilya
+Sutskever 以及 Jack Rae
+公开讨论过柯氏复杂度、压缩机以及大语言模型之间的关系</a></p>
+<h2 id="为什么大模型分类模型的损失函数采用交叉熵而不是-mse">为什么大模型（分类模型）的损失函数采用交叉熵而不是
+MSE？</h2>
+<hr>
+<blockquote>
+<p><strong>Mean Squared Error (均方误差)</strong> <span class="math display">\[MSE=\frac{1}{n}\sum_{i=1}^n{(y_i-\hat{y}_i)^2}\]</span></p>
+<p><strong>Cross Entropy Loss Function（交叉熵损失函数）</strong><br>
+<strong>二分类：</strong> <span class="math display">\[L=\frac{1}{N}\sum_i{L_i}=\frac{1}{N}\sum_i[y_i\cdot
+log(p_i)+(1-y_i)\cdot log(1-p_i)]\]</span></p>
+<ul>
+<li><span class="math inline">\(y_i\)</span> 样本<span class="math inline">\(i\)</span>的label，正类为1，负类为0</li>
+<li><span class="math inline">\(p_i\)</span> 样本<span class="math inline">\(i\)</span>的预测为正类的概率</li>
+</ul>
+<p><strong>多分类：</strong> <span class="math display">\[L=\frac{1}{N}\sum_i{L_i}=-\frac{1}{N}\sum_i\sum_{c=1}^M{y_{ic}log(p_{ic})}\]</span></p>
+<ul>
+<li><span class="math inline">\(M\)</span> 类别的数量</li>
+<li><span class="math inline">\(y_{ic}\)</span> 符号函数（ 0 或 1
+），如果样本 <span class="math inline">\(i\)</span> 的真实类别等于 <span class="math inline">\(c\)</span> 取 1 ，否则取 0</li>
+<li><span class="math inline">\(p_{ic}\)</span> 观测样本 <span class="math inline">\(i\)</span> 属于类别 <span class="math inline">\(c\)</span> 的预测概率</li>
+</ul>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>核心原因是：机器学习做的事情就是在做最大似然估计(MLE),
+当然贝叶斯学派是在做最大后验概率估计(MAP)</strong></p>
+<p>不核心的原因是：MSE 对预测错误的惩罚不如交叉熵。比如 y = 1
+时，模型预测为 0, 此时 MSE 的loss 为 1，而交叉熵 loss 则为无穷大</p>
+</blockquote>
+<h3 id="回归问题">回归问题</h3>
+<p>对于线性回归问题，通常建模为 <span class="math inline">\(y=\beta_0 +
+\beta_1x_1 + ... + \beta_mx_m + \epsilon\)</span></p>
+<blockquote>
+<p><span class="math inline">\(\epsilon\)</span>表示误差项，通常符合正态分布，即<span class="math inline">\(\epsilon\sim N(0,\sigma^2)\)</span></p>
+</blockquote>
+<p>预测值为 <span class="math inline">\(\hat{y} = \beta_0 + \beta_1x_1 +
+... + \beta_mx_m\)</span>，那么<span class="math inline">\(y\)</span>的分布可以表示为： <span class="math display">\[y\sim N(\hat{y}, \sigma^2)\]</span></p>
+<p>此时，概率密度函数可以表示为： <span class="math display">\[f(y|\hat{y},\sigma^2)=\frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(y-\hat{y})^2}{2\sigma^2}}\]</span></p>
+<p>对于多个样本，最大似然估计就是最大化每个观测的概率密度的乘积： <span class="math display">\[\mathcal{L}=\prod_{i=1}^n{f(y_i|\hat{y}_i,\sigma^2)}=(2\pi\sigma^2)^{-\frac{n}{2}}e^{-\frac{1}{2\sigma^2}\sum_{i=1}^n{(y_i-\hat{y}_i)^2}}\]</span></p>
+<p>去掉常数项： <span class="math display">\[
+\begin{aligned}
+&amp;\mathcal{L}\sim e^{-\sum_{i=1}^n{(y_i-\hat{y}_i)^2}} \\
+\Rightarrow &amp;-\frac{1}{n}log\mathcal{L}\sim
+\frac{1}{n}\sum_{i=1}^n{(y_i-\hat{y}_i)^2} \\
+&amp;= \textcolor{red}{\text{MSE(Mean Square Error/均方差损失)}}
+\end{aligned}
+\]</span></p>
+<h3 id="分类问题">分类问题</h3>
+<p>对于分类问题，此时数据就不再符合高斯分布了。一般的假设是数据符合伯努利分布，即：<span class="math inline">\(p(y|x)=p^x(1-p)^{1-x}\)</span></p>
+<blockquote>
+<p>当x为1的概率为p，x为0的概率为1-p</p>
+</blockquote>
+<p>这个时候最大似然估计直接相乘就行： <span class="math display">\[
+\begin{aligned}
+&amp;\mathcal{L}=\prod_{i=1}^n{p(y=y_i)}=\prod_{i=1}^n{p^y_i(1-p)^{1-y_i}}
+\\
+\Rightarrow &amp;-\log\mathcal{L}=-\sum_{i=1}^n{y_i
+ln{p_i}+(1-y_i)ln(1-p_i)} \\
+&amp;= \textcolor{red}{\text{Cross Entropy（交叉熵）}}
+\end{aligned}
+\]</span></p>
+<p>所以对于二分类问题，一个通常的假设是数据符合伯努利分布，此时最大似然估计就等价于<code>最小化交叉熵</code><br>
+对于多分类一般假设数据符合多项式分布，证明过程和上面是基本一样。</p>
+<mark class="hl-label red">如果分类问题强行使用 MSE 会怎么样？</mark>
 
-<p>需要注意当 sequence 特别长的时候，KV Cache 其实还是个 Memory 刺客</p>
+<p>对于分类问题，一般都会在最后加一个 sigmoid 来拟合 0 和 1，但是
+sigmoid + mse
+的函数是非凸的，这就会<strong>导致模型陷入局部最优点</strong>。</p>
+<p>证明需要用到凸函数的二阶导非负这个结论。证明如下：</p>
+<p>假设<span class="math inline">\(f(x)=(y-\hat{y})^2\)</span>，其中<span class="math inline">\(\hat{y}=\sigma(x)=\frac{1}{1+e^{-\theta
+x}}\)</span></p>
+<p>根据sigmoid性质：<span class="math inline">\(\frac{\partial\hat{y}}{\partial\theta}=\hat{y}(1-\hat{y})x\)</span></p>
+<p><span class="math inline">\(f(x)\)</span>一阶导为： <span class="math display">\[
+\frac{\partial f}{\partial\theta}=\frac{\partial
+f}{\partial\hat{y}}\frac{\partial\hat{y}}{\partial\theta}=-2(y-\hat{y})\hat{y}(1-\hat{y})x=-2(y\hat{y}-y\hat{y}^2-\hat{y}^2+\hat{y}^3)x
+\]</span></p>
+<p><span class="math inline">\(f(x)\)</span>二阶导为： <span class="math display">\[
+\frac{\partial^2 f}{\partial\theta^2}=\frac{\frac{\partial
+f}{\partial\theta}}{\partial\hat{y}}\frac{\partial\hat{y}}{\partial\theta}=-2(y-2y\hat{y}-2\hat{y}+3\hat{y}^2)x^2\hat{y}(1-\hat{y})
+\]</span></p>
 <blockquote>
-<p>比如 batch_size=32, head=32, layer=32, dim_size=4096,
-seq_length=2048, float32 类型，则需要占用的显存为 2 * 32 * 4096 * 2048 *
-32 * 4 / 1024 / 1024 / 1024 = 64G</p>
+<p>其中<span class="math inline">\(\hat{y}(1-\hat{y})\)</span>和<span class="math inline">\(x^2\)</span>总是大于等于0</p>
 </blockquote>
-<h2 id="todo">TODO</h2>
-<p>针对内存的问题，学者们研发出了 Page Attention 之类的方法来优化</p>
-<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+<p>对于<span class="math inline">\(-2(y-2y\hat{y}-2\hat{y}+3\hat{y}^2)\)</span></p>
+<p><strong>当y=1时：</strong> <span class="math display">\[\Rightarrow
+-2(1-4\hat{y}+2\hat{y}^2)=-6(\hat{y}-\frac{1}{3})(\hat{y}-1)\]</span></p>
+<p>当<span class="math inline">\(\hat{y}\in[0,\frac{1}{3}]\)</span>时，上式为负，所以<span class="math inline">\(f(x)\)</span>为非凸函数</p>
+<p><strong>当y=0时：</strong> <span class="math display">\[\Rightarrow
+-2(3\hat{y}^2-2\hat{y})=-6\hat{y}(\hat{y}-\frac{2}{3})\]</span></p>
+<p>当<span class="math inline">\(\hat{y}\in(0,\frac{2}{3})\)</span>时，上式为负，所以<span class="math inline">\(f(x)\)</span>为非凸函数</p>
+<h2 id="扩展问题">扩展问题</h2>
+<ol type="1">
+<li>交叉熵和KL散度在深度学习的其他方面还有哪些应用？</li>
+<li>为什么经常选择使用交叉熵而不是KL散度作为损失函数？</li>
+<li>通常在softmax层后使用交叉熵损失。为什么这种组合特别有效？请从数学角度解释。</li>
+<li>为什么通过预测 next token 就能产生智能？</li>
+</ol>
 ]]></content>
       <categories>
-        <category>LLMs</category>
-        <category>推理优化</category>
-        <category>KVCache</category>
+        <category>神经网络</category>
+        <category>基础知识</category>
       </categories>
       <tags>
-        <tag>LLMs</tag>
-        <tag>推理优化</tag>
-        <tag>KVCache</tag>
+        <tag>神经网络</tag>
+        <tag>基础知识</tag>
       </tags>
   </entry>
   <entry>
@@ -2737,9 +2976,215 @@ tying 的解释</a></p>
       </tags>
   </entry>
   <entry>
+    <title>梯度下降推导</title>
+    <url>/p/2e71c2ed.html</url>
+    <content><![CDATA[<h2 id="梯度下降的数学原理">梯度下降的数学原理</h2>
+<p>假设我们的损失函数为<span class="math inline">\(L(\theta)\)</span>，那么损失函数在点<span class="math inline">\(\theta_{t-1}\)</span>处展开，则有： <span class="math display">\[L(\theta)\approx
+L(\theta_{t-1})+g^T(\theta-\theta_{t-1})+\frac{1}{2}(\theta-\theta_{t-1})^TH(\theta-\theta_{t-1})+...\]</span></p>
+<blockquote>
+<p>其中<span class="math inline">\(g\in \mathbb{R}^{n\times
+1}\)</span>为梯度，为列向量。<span class="math inline">\(H\in
+\mathbb{R}^{n\times n}\)</span>为 Hessian 矩阵</p>
+</blockquote>
+<p>如果只保留一阶近似，得到 <span class="math display">\[L(\theta)\approx
+L(\theta_{t-1})+g^T(\theta-\theta_{t-1})\]</span></p>
+<p>现在我们想让损失函数 <span class="math inline">\(L(\theta)\)</span>
+变得越小越好，也就是找到一个让<span class="math inline">\(L(\theta)\)</span>最小的<span class="math inline">\(\theta\)</span>，则有 <span class="math display">\[
+\begin{aligned}
+\underset{\theta}{\text{argmin}} L(\theta)&amp;\approx
+\underset{\theta}{\text{argmin}} (L(\theta_{t-1}) +
+g^T(\theta-\theta_{t-1})) \\
+&amp;= \underset{\theta}{\text{argmin}} L(\theta_{t-1}) + g^T\theta -
+g^T\theta_{t-1} \\
+&amp;= \underset{\theta}{\text{argmin}}(g^T\theta) \\
+&amp;= \underset{\theta}{\text{argmin}}(||g||\cdot ||\theta||\cdot
+cos\phi) \\
+\end{aligned}
+\]</span></p>
+<blockquote>
+<p>其中<span class="math inline">\(\phi\)</span>为列向量<span class="math inline">\(\theta\)</span>和<span class="math inline">\(g\)</span>的夹角</p>
+</blockquote>
+<p>显然这个式子当<span class="math inline">\(cos\phi=-1\)</span>时，即列向量<span class="math inline">\(\theta\)</span>的方向为梯度的反方向时，损失函数取得最小值</p>
+<p>利用这一个性质，我们就得到了梯度下降的算法，参数<span class="math inline">\(\theta\)</span>沿着梯度的反方向移动，就可以让损失函数越来越小，即
+<span class="math display">\[\theta_t=\theta_{t-1}-g_t\]</span></p>
+<p>但是有时候梯度的值可能比较大，参数变化太大的话会导致优化过程无法收敛，所以通常会在梯度下降的时候加上一个阻尼系数<span class="math inline">\(\alpha\)</span>，也叫学习率，来限制参数<span class="math inline">\(\theta\)</span>的变化幅度。所以梯度下降的基本公式为：
+<span class="math display">\[\boldsymbol{\theta}_t=\boldsymbol{\theta}_{t-1}-\alpha\cdot
+\boldsymbol{g}_t\]</span></p>
+<p>上式中的符号粗体为向量。由于参数和梯度是一一对应的，所以把上式中的向量展开，就得到了每一个参数的梯度下降表示：
+<span class="math display">\[\theta_t=\theta_{t-1}-\alpha\cdot
+g_t\]</span></p>
+<p>上式中所有的符号都是标量。梯度下降就是泰勒一阶近似的优化算法，而如果保留二阶展开，则是牛顿法。</p>
+<h2 id="收敛性分析">收敛性分析</h2>
+<p>随机梯度下降可以表示为： <span class="math display">\[\theta_{t+1}=\theta_{t}-\alpha_t\cdot
+g(\theta_t,x_t)\]</span></p>
+<blockquote>
+<p>其中<span class="math inline">\(x_t\)</span>是第<span class="math inline">\(t\)</span>次迭代的数据，<span class="math inline">\(\alpha_t\)</span>是第<span class="math inline">\(t\)</span>次迭代的学习率</p>
+</blockquote>
+<mark class="hl-label red">如果每次只用一个样本的梯度，模型会收敛么？</mark>
+
+<p>定义让损失函数<span class="math inline">\(L(\theta,x)\)</span>取得最小值的<span class="math inline">\(\theta\)</span>为<span class="math inline">\(\theta^*\)</span>，则最优的损失函数为<span class="math inline">\(L(\theta^*,x)\)</span></p>
+<p>证明之前有三个假设：</p>
+<ol type="1">
+<li>损失函数<span class="math inline">\(L(\theta,x)\)</span>是一个凸函数</li>
+<li>梯度的L2范数是有上界的，不能存在无限大的梯度。假设这个上界为<span class="math inline">\(M^2\)</span>，则对任意的梯度<span class="math inline">\(g\)</span>都有<span class="math inline">\(||g||^2
+\le M^2\)</span></li>
+<li>任意参数<span class="math inline">\(\theta\)</span>到最优参数<span class="math inline">\(\theta^*\)</span>之间的L2范数是有上界的，假设为<span class="math inline">\(R^2\)</span>，则对于任意参数，都有<span class="math inline">\(||\theta-\theta^*||\le R^2\)</span></li>
+</ol>
+<p>此时我们想知道，在随着迭代步数<span class="math inline">\(t\)</span>的增大，通过随机梯度下降优化后的參数<span class="math inline">\(\theta_{t+1}\)</span>是与最优参数<span class="math inline">\(\theta^*\)</span>的距离是否越来越近。</p>
+<ul>
+<li>如果随着<span class="math inline">\(t\)</span>的增大，两者的距离趋近于0，则说明随机梯度下降是收敛的，否则就是发散的。</li>
+</ul>
+<p><span class="math display">\[
+\begin{aligned}
+|\theta_{t+1}-\theta^*|^2 &amp;= |\theta_t-\alpha_t\cdot
+g(\theta_t,x_t)-\theta^*|^2 \\
+&amp;= |\theta_t-\theta^*|^2 + \alpha_t^2|g(\theta_t,x_t)|^2 -
+2\alpha_t\langle\theta_t-\theta^*,g(\theta_t,x_t)\rangle
+\end{aligned}
+\]</span></p>
+<p>根据上式可以得到： <span class="math display">\[
+\begin{aligned}
+||\theta_{t}-\theta^*||^2 - ||\theta_{t+1}-\theta^*||^2 &amp;=
+-\alpha_t^2||g(\theta_t,x_t)||^2 -
+2\alpha_t\langle\theta_t-\theta^*,g(\theta_t,x_t)\rangle
+\end{aligned}
+\]</span></p>
+<p>根据第二个假设，可得<span class="math inline">\(||g(\theta_t,x_t)||^2
+\le M^2\)</span></p>
+<p>由于第一个假设<code>损失函数是凸函数</code>，而对于凸函数上的任意两点满足一个性质为：<span class="math inline">\(f(y)\ge f(x)+\langle
+y-x,f&#39;(x)\rangle\)</span>，所以： <span class="math display">\[
+\begin{aligned}
+L(\theta^*,x_t) \ge
+L(\theta_t,x_t)+\langle\theta^*-\theta_t,g(\theta_t,x_t)\rangle=L(\theta_t,x_t)-\langle\theta_t-\theta^*,g(\theta_t,x_t)\rangle
+\\
+\Rightarrow \langle\theta_t-\theta^*,g(\theta_t,x_t)\rangle \ge
+L(\theta_t,x_t)-L(\theta^*,x_t)
+\end{aligned}
+\]</span></p>
+<p>整理可得： <span class="math display">\[
+\begin{aligned}
+||\theta_t-\theta^*||^2 - ||\theta_{t+1}-\theta^*||^2 \ge
+2\alpha_t(\boldsymbol{L(\theta_t,x_t)-L(\theta^*,x_t)})-\alpha_t^2M^2 \\
+\Rightarrow \boldsymbol{L(\theta_t,x_t)-L(\theta^*,x_t)} \le
+\frac{||\theta_t-\theta^*||^2}{2\alpha_t} -
+\frac{||\theta_{t+1}-\theta^*||^2}{2\alpha_t}-\frac{\alpha_tM^2}{2}
+\end{aligned}
+\]</span></p>
+<p>x）假设我们一共进行了T步迭代，则与最优损失的期望差值为： <span class="math display">\[
+\begin{aligned}
+\mathbb{E}\left[L\left(\boldsymbol{\theta}_{t},
+\mathbf{x}_{\mathbf{t}}\right)-L\left(\boldsymbol{\theta}^{*},
+\mathbf{x}_{\mathbf{t}}\right)\right] &amp; =\frac{1}{T}
+\sum_{t=1}^{T}\left(L\left(\boldsymbol{\theta}_{t},
+\mathbf{x}_{\mathbf{t}}\right)-L\left(\boldsymbol{\theta}^{*},
+\mathbf{x}_{\mathbf{t}}\right)\right) \\
+&amp; \leq \frac{1}{T}
+\sum_{t=1}^{T}\left(\frac{\left\|\boldsymbol{\theta}_{t}-\boldsymbol{\theta}^{*}\right\|^{2}}{2
+\alpha_{t}}-\frac{\left\|\boldsymbol{\theta}_{t+1}-\boldsymbol{\theta}^{*}\right\|^{2}}{2
+\alpha_{t}}\right)+\frac{1}{T} \sum_{t=1}^{T} \frac{\alpha_{t} M^{2}}{2}
+\\
+&amp;
+=\frac{1}{T}\left(\frac{\left\|\boldsymbol{\theta}_{1}-\boldsymbol{\theta}^{*}\right\|^{2}}{2
+\alpha_{1}}+\sum_{t=2}^{T}\left(\frac{1}{2 \alpha_{t}}-\frac{1}{2
+\alpha_{t-1}}\right)\left\|\boldsymbol{\theta}_{t}-\boldsymbol{\theta}^{*}\right\|^{2}-\frac{\left\|\boldsymbol{\theta}_{T+1}-\boldsymbol{\theta}^{*}\right\|^{2}}{2
+\alpha_{T}}\right)+\frac{1}{T} \sum_{t=1}^{T} \frac{\alpha_{t} M^{2}}{2}
+\\
+&amp; \leq
+\frac{1}{T}\left(\frac{\left\|\boldsymbol{\theta}_{1}-\boldsymbol{\theta}^{*}\right\|^{2}}{2
+\alpha_{1}}+\sum_{t=2}^{T}\left(\frac{1}{2 \alpha_{t}}-\frac{1}{2
+\alpha_{t-1}}\right)\left\|\boldsymbol{\theta}_{t}-\boldsymbol{\theta}^{*}\right\|^{2}\right)+\frac{1}{T}
+\sum_{t=1}^{T} \frac{\alpha_{t} M^{2}}{2} \\
+&amp; \leq \frac{1}{T}\left(\frac{R^{2}}{2
+\alpha_{1}}+\sum_{t=2}^{T}\left(\frac{1}{2 \alpha_{t}}-\frac{1}{2
+\alpha_{t-1}}\right) R^{2}\right)+\frac{1}{T} \sum_{t=1}^{T}
+\frac{\alpha_{t} M^{2}}{2} \\
+&amp; \leq \frac{R^{2}}{T}\left(\frac{1}{2 \alpha_{1}}+\frac{1}{2
+\alpha_{2}}-\frac{1}{2 \alpha_{1}}+\frac{1}{2 \alpha_{3}}-\frac{1}{2
+\alpha_{2}}+\ldots+\frac{1}{2 \alpha_{T}}-\frac{1}{2
+\alpha_{T-1}}\right)+\frac{1}{T} \sum_{t=1}^{T} \frac{\alpha_{t}
+M^{2}}{2} \\
+&amp; =\frac{R^{2}}{2 T \alpha_{T}}+\frac{1}{2 T} \sum_{t=1}^{T}
+\alpha_{t} M^{2}
+\end{aligned}
+\]</span></p>
+<p>这么就得到了与最优损失之间的上界</p>
+<mark class="hl-label green">当T趋近无穷时，上式是否收敛到0</mark>
+
+<p>先看两种特殊的情况：</p>
+<ol type="1">
+<li>当我们选择一个恒等的学习率<span class="math inline">\(\alpha\)</span>时： <span class="math display">\[
+\lim_{T\to\infty}\mathbb{E}[\boldsymbol{L(\theta_t,x_t)-L(\theta^*,x_t)}]
+\le \lim_{T\to\infty}(\frac{R^2}{2T\alpha}+\frac{\alpha
+M^2}{2})=\frac{\alpha M^2}{2}
+\]</span></li>
+</ol>
+<blockquote>
+<p>可以发现，固定的学习率在梯度下降的时候，与最优损失的期望差值并没有收敛到
+0，在这种情况下，我们只能找到一个<code>次优解</code></p>
+</blockquote>
+<ol start="2" type="1">
+<li>当我们选择一个学习率<span class="math inline">\(\alpha_t=\frac{R}{M\sqrt{t}}\)</span>时，期望差值可以收敛到0：</li>
+</ol>
+<p>由于<span class="math inline">\(\sum_{t=1}^{T}\frac{1}{\sqrt{t}}\le
+\smallint_{t=1}^{T}\frac{1}{\sqrt{t}}dt=2\sqrt{T}\)</span>，则有： <span class="math display">\[
+\lim_{T\to\infty}\mathbb{E}[\boldsymbol{L(\theta_t,x_t)-L(\theta^*,x_t)}]
+\le
+\lim_{T\to\infty}(\frac{R^2}{2T\times\frac{R}{M\sqrt{K}}}+\frac{RM}{2T}2\sqrt{K})=\lim_{T\to\infty}(\frac{3RM}{\sqrt{K}})=0
+\]</span></p>
+<p>如果不考虑特殊情况，而是想知道一个更通用的结论时，需要用到鞅差序列和Azuma-Hoeffding不等式，这里只列出结论：
+在之前的三个假设下，对于任意的<span class="math inline">\(\epsilon&gt;0\)</span>，存在如下的收敛概率： <span class="math display">\[
+P(\mathbb{E}[\boldsymbol{L(\theta_t,x_t)-L(\theta^*,x_t)}] \le
+\frac{R^2}{2T\alpha_T}+\frac{1}{2T}\sum_{t=1}^{T}\alpha_t
+M^2+\frac{RM}{\sqrt{K}}\epsilon) \ge 1-e^{-\frac{1}{2}\epsilon^2}
+\]</span></p>
+<h2 id="如何使用梯度下降求-sqrt">如何使用梯度下降求 sqrt？</h2>
+<blockquote>
+<p>不一定是求 sqrt，也可以是最小二乘，或者逻辑回归等。</p>
+</blockquote>
+<p>要使用梯度下降，必须先构造一个loss，这里可以用<span class="math inline">\((x_{sqrt}^2-target)^2\)</span>来表示</p>
+<blockquote>
+<p>为什么<span class="math inline">\((x_{sqrt}^2-target)^2\)</span>可以当作
+loss？因为<span class="math inline">\(x^2\)</span>是个严格的<code>凸函数</code></p>
+</blockquote>
+<blockquote>
+<p>还能不能构造其他的 loss呢？当然也可以，比如：<span class="math inline">\(loss=e^x+e^{-x}\)</span>、<span class="math inline">\(loss=x+1+\frac{1}{x+1};x&gt;-1\)</span></p>
+<p>但是这两个会存在值域的问题，尤其是后一个，很不好用，甚至可以说处理不好的话几乎没法使用。<br>
+<strong>优化方法：</strong> 处理的方法有很多，比如常用的有截断，loss
+缩放等。最简单的就是类似 normalization 的方法，把 loss
+映射到一个合适的范围内</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 使用Adam优化</span></span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置要求平方根的数字</span></span><br><span class="line">target = <span class="number">20.0</span></span><br><span class="line">x = torch.tensor([<span class="number">5.0</span>], requires_grad=<span class="literal">True</span>)  <span class="comment"># 不要忘了设置requires_grad</span></span><br><span class="line">optimizer = torch.optim.Adam([x], lr=<span class="number">0.1</span>)    <span class="comment"># 使用 Adam 优化器</span></span><br><span class="line"></span><br><span class="line">losses = []  <span class="comment"># 记录损失值</span></span><br><span class="line">values = []  <span class="comment"># 记录 x 的值</span></span><br><span class="line"></span><br><span class="line">threshold = <span class="number">1e-8</span></span><br><span class="line"><span class="comment"># 训练循环</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">500</span>):</span><br><span class="line">    <span class="comment"># 清零梯度</span></span><br><span class="line">    optimizer.zero_grad()</span><br><span class="line">    <span class="comment"># 计算损失：(x^2 - target)^2</span></span><br><span class="line">    loss = (x * x - target) ** <span class="number">2</span></span><br><span class="line">    <span class="keyword">if</span> loss.item() &lt; threshold:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="comment"># 反向传播</span></span><br><span class="line">    loss.backward()</span><br><span class="line">    <span class="comment"># 更新参数</span></span><br><span class="line">    optimizer.step()</span><br><span class="line">    <span class="comment"># 记录数据</span></span><br><span class="line">    losses.append(loss.item())</span><br><span class="line">    values.append(x.item())</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> i % <span class="number">10</span> == <span class="number">0</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;Step <span class="subst">&#123;i&#125;</span>: x = <span class="subst">&#123;x.item():<span class="number">.6</span>f&#125;</span>, loss = <span class="subst">&#123;loss.item():<span class="number">.6</span>f&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/p/2e71c2ed/sqrt梯度下降求解-adam.png"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置要求平方根的数字</span></span><br><span class="line">target = <span class="number">20.0</span></span><br><span class="line">x = <span class="number">5.0</span>  <span class="comment"># 初始猜测值</span></span><br><span class="line"></span><br><span class="line">losses = []  <span class="comment"># 记录损失值</span></span><br><span class="line">values = []  <span class="comment"># 记录 x 的值</span></span><br><span class="line"></span><br><span class="line">lr = <span class="number">0.001</span></span><br><span class="line">threshold = <span class="number">1e-8</span></span><br><span class="line"><span class="comment"># 训练循环</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">500</span>):</span><br><span class="line">    <span class="comment"># 计算损失：(x^2 - target)^2</span></span><br><span class="line">    loss = (x * x - target) ** <span class="number">2</span></span><br><span class="line">    <span class="keyword">if</span> loss &lt; threshold:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="comment"># 反向传播</span></span><br><span class="line">    gradient = <span class="number">4.0</span> * x * (x * x - target)</span><br><span class="line">    <span class="comment"># 更新参数</span></span><br><span class="line">    x -= lr * gradient</span><br><span class="line">    <span class="comment"># 记录数据</span></span><br><span class="line">    losses.append(loss)</span><br><span class="line">    values.append(x)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> i % <span class="number">10</span> == <span class="number">0</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;Step <span class="subst">&#123;i&#125;</span>: x = <span class="subst">&#123;x:<span class="number">.6</span>f&#125;</span>, loss = <span class="subst">&#123;loss:<span class="number">.6</span>f&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/p/2e71c2ed/sqrt梯度下降求解-手撕.png"></p>
+<h2 id="扩展问题">扩展问题</h2>
+<ol type="1">
+<li>梯度下降、牛顿法与泰勒展开的关系</li>
+<li>为什么大模型训练不用牛顿法？</li>
+<li>为什么大模型优化都使用 Adam？</li>
+</ol>
+<h2 id="reference--进一步阅读">Reference &amp;&amp; 进一步阅读</h2>
+<p>[0] <a href="https://learningds.org/ch/20/gd_convex.html">Convex and
+Differentiable Loss Functions</a><br>
+[1] <a href="https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf">Convex
+Optimization</a></p>
+]]></content>
+      <categories>
+        <category>神经网络</category>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>神经网络</tag>
+        <tag>基础知识</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>强化学习（一）：PPO、DPO梳理</title>
     <url>/p/6ad6791a.html</url>
-    <content><![CDATA[<h2 id="强化学习相关概念">强化学习相关概念</h2>
+    <content><![CDATA[<p><img src="/p/6ad6791a/强化学习的发展历程.png"></p>
+<h2 id="强化学习相关概念">强化学习相关概念</h2>
 <p><strong>强化学习：</strong></p>
 <p>智能体（Agent）通过与环境（Evoriment）交互，决定采取的动作（Action），从试错中获得奖励或惩罚（Reward），从而学习最优策略（Policy）。它的核心目标是<strong>最大化长期累计回报</strong>，使智能体在未知环境中做出最优决策。
 <img src="/p/6ad6791a/强化学习过程.png"></p>
@@ -2773,6 +3218,7 @@ Policy Optimization，近端策略优化）</li>
 <blockquote>
 <p><a href="https://mp.weixin.qq.com/s/am_ulGA18klm6T5KEuAI7w">别再二选一了！一文看懂On-Policy与Off-Policy的本质分歧（含GRPO深度拆解</a></p>
 </blockquote>
+<p><img src="/p/6ad6791a/【强化学习基础】强化学习训练范式的对比.jpg"></p>
 <mark class="hl-label red">On-Policy：行为策略（生成数据）和目标策略（学习策略）相同</mark>
 
 <p>强调现学现用：你只能根据你当前行为策略做出的决策来学习。也就是说，你走路摔了跤，那就根据你自己的经验总结教训；别人的教训你学不了。<br>
@@ -2803,19 +3249,16 @@ SAC（深度强化学习中的 Actor-Critic）</p>
 preference）或规则奖励（reward function）的回复。<br>
 <strong>核心技术：</strong> RLHF = 模型训练 + 人类反馈（或代理奖励） +
 强化学习优化。</p>
-<p><img src="/p/6ad6791a/the_development_process_for_ChatGPT.png"></p>
+<!-- ![](the_development_process_for_ChatGPT.png) -->
+
+<p><img src="/p/6ad6791a/模型训练三阶段.PNG"></p>
 <mark class="hl-label red">为什么需要RLHF？</mark>
 
-<p>即使有了Pre-train和SFT，模型仍存在以下问题：</p>
-<ul>
-<li><strong>SFT存在局限性：</strong>
-依赖有限的标注数据，难以覆盖复杂场景。模型可能学会“模仿标注数据”，但无法理解深层次的人类偏好。</li>
-<li><strong>人类偏好的主观性：</strong>
-许多目标（如“友好”“无害”）难以用损失函数直接定义，但可以通过人类反馈间接学习。</li>
-<li><strong>输出质量的动态优化：</strong>
-RLHF能通过强化学习的奖励机制（Reward
-Model）对模型输出进行细粒度调整（例如选择更简洁或更详细的回答）。</li>
-</ul>
+<!-- 即使有了Pre-train和SFT，模型仍存在以下问题：
+- **SFT存在局限性：** 依赖有限的标注数据，难以覆盖复杂场景。模型可能学会“模仿标注数据”，但无法理解深层次的人类偏好。  
+- **人类偏好的主观性：** 许多目标（如“友好”“无害”）难以用损失函数直接定义，但可以通过人类反馈间接学习。  
+- **输出质量的动态优化：** RLHF能通过强化学习的奖励机制（Reward Model）对模型输出进行细粒度调整（例如选择更简洁或更详细的回答）。 -->
+
 <p>TRPO和 PPO 的作者John Schulman，在 2023年的<a href="https://www.bilibili.com/video/BV1Ao4y187GD/?spm_id_from=333.337.search-card.all.click">《Reinforcement
 Learning from Human Feedback: Progress and
 Challenges》</a>讲座中，引用了 Yoav Goldberg
@@ -2988,7 +3431,7 @@ Optimization (PPO) 算法理解：从策略梯度开始</a></p>
 </blockquote>
 <!-- ![](PPO演变过程.png) -->
 
-<p><img src="/p/6ad6791a/PG到AC到TRPO到PPO到DPO演进公式对比.png"></p>
+<p><img src="/p/6ad6791a/【策略优化架构算法及其衍生】PPO算法的演进.jpg"> <img src="/p/6ad6791a/PG到AC到TRPO到PPO到DPO演进公式对比.png"></p>
 <h4 id="代码实现">代码实现</h4>
 <blockquote>
 <p>https://github.com/OpenRLHF/OpenRLHF/blob/main/openRLHF/trainer/PPO_trainer.py<br>
@@ -3029,8 +3472,19 @@ Preference Optimization，直接偏好优化）</h3>
 Optimization:Your Language Model is Secretly a Reward Model</a></p>
 </blockquote>
 <p><img src="/p/6ad6791a/【DPO】RLHF与DPO的训练架构对比.png"></p>
-<p>RLHF的简化方案，目标是避免复杂的策略梯度和PPO训练。</p>
-<p><strong>核心思想：</strong>
+<blockquote>
+<p>RLHF 很好，但是也有如下问题:</p>
+<ol type="1">
+<li>RLHF流程上需要采用topK，beam search
+等对输出结果进行采样，这就导致<strong>整个流程不可微，只能采用 TRPO/PPO
+等算法</strong></li>
+<li><strong>采样要大</strong>，不然收敛很慢甚至无法收敛</li>
+<li><strong>计算量很大</strong>，最多需要4个模型协同工作。而且要专门训练一个
+Reward Model</li>
+<li><strong>训练不稳定</strong>，强化学习对超参数非常敏感。这就导致初学者和高手跑出来的效果天差地别，甚至高手有时候也不能复现自己最好的结果</li>
+</ol>
+</blockquote>
+<p><strong>DPO 核心思想：</strong>
 通过对比训练让模型直接给更受偏好的输出分配更高概率，而不显式使用 RL
 的采样和价值函数。</p>
 <p>DPO去除了RM部分，只需要通过<span class="math inline">\(\pi_{base}\)</span>与<span class="math inline">\(\pi_\theta\)</span>的对比训练完成。</p>
@@ -3058,23 +3512,56 @@ D}[\cdot]\)</span> 在整个训练数据分布 <span class="math inline">\(D\)</
 <p><a href="https://mp.weixin.qq.com/s/WptWT0GGqml-l3xhClMNyg">LLM强化学习算法演进之路：Q-Learning-&gt;DQN-&gt;PPO-&gt;DPO等</a>
 DPO部分</p>
 </blockquote>
+<p>RLHF 和 DPO 最终的目的都是一样的：<mark class="hl-label red">求解最优的 policy 是什么？</mark></p>
+<blockquote>
+<p>DPO 作者发现：<strong>RLHF 求解的最优的 policy 和 Reward
+Model可以做一个等价转换。</strong> 即求解最优 policy
+的过程可以变成如何求解一个 Reward Model。</p>
+<p>对于最优的 policy：即使知道最优的 policy
+的计算公式，也没法求解，因为需要求解y的所有可能性，无法计算。只能采样，但是采样就不可微，所以只能通过
+TRPO/PPO 来求解。</p>
+<p>而求解最优 reward 的 Bradley-Terry
+model，刚好规避了无法计算的部分。而且求解最优 reward
+的过程没有采样，整个过程是可微的。</p>
+<p>“最优的 reward 是什么？”这个问题是可求解的，进而“最优的 policy
+是什么？”也变成了可求解。</p>
+</blockquote>
 <p>记<span class="math inline">\(r_\phi\)</span>是 Reward_model，<span class="math inline">\(\pi_\theta\)</span>是要优化的模型，<span class="math inline">\(\pi_{ref}\)</span>是 dpo 和 PPO 都用到的
 reference_model</p>
 <p>Reward_model loss: <span class="math display">\[
 \max_{r_{\phi}}\left\{\mathbb{E}_{\left(x, y_{win}, y_{loss}\right) \sim
 \mathcal{D}}\left[\log\sigma(r_{\phi}(x, y_{win})-r_{\phi}(x,
 y_{loss}))\right]\right\}
-\]</span> PPO loss: <span class="math display">\[
+\]</span></p>
+<hr>
+<p><strong>Reward Model 公式推导</strong><br>
+建立一个能够对任意的文本进行全局打分的模型是很难的，但是给两个样本，来判断这两个样本哪个好是相对容易的。通常用
+<code>Bradley-Terry model</code> 来刻画 Reward Model 打分的好坏 <span class="math display">\[
+\begin{aligned}
+P(y_w\succ y_l) &amp;= \frac{e^{r(x,y_w)}}{e^{r(x,y_w)}+e^{r(x,y_l)}} \\
+&amp;= \frac{1}{1+e^{-(r(x,y_w)-r(x,y_l))}} \\
+&amp;= \sigma(r(x,y_w)-r(x,y_l))
+\end{aligned}
+\]</span></p>
+<p>假设有一些语料<span class="math inline">\((x,y_w,y_l)\)</span>，可以通过BT
+model进行最大似然估计进行建模，则RM的Loss可以定义为： <span class="math display">\[
+L_{R}(r_\phi,D)=-\mathbb{E}_{(x,y_{win},y_{loss})\sim
+D}\left[log\sigma(r_\phi(x,y_{win})-r_\phi(x,y_{loss}))\right]
+\]</span></p>
+<hr>
+<p>PPO loss: <span class="math display">\[
 \max_{\pi_{\theta}}\left\{\mathbb{E}_{x \sim \mathcal{D}, y \sim
 \pi_{\theta}(y \mid x)}\left[r_{\phi}(x, y)\right]-\beta \mathbb{D}_{K
 L}\left[\pi_{\theta}(y \mid x) \| \pi_{ref}(y \mid x)\right]\right\}
-\]</span> dpo loss: <span class="math display">\[
+\]</span></p>
+<p>DPO loss: <span class="math display">\[
 \max_{\pi_{\theta}}\left\{\mathbb{E}_{\left(x, y_{win}, y_{loss}\right)
 \sim \mathcal{D}}\left[\log \sigma\left(\beta \log
 \frac{\pi_{\theta}(y_{win} \mid x)}{\pi_{ref}(y_{win} \mid x)}-\beta
 \log \frac{\pi_{\theta}(y_{loss} \mid x)}{\pi_{ref}(y_{loss} \mid
 x)}\right)\right]\right\}
-\]</span> KL散度: <span class="math display">\[
+\]</span></p>
+<p>KL散度: <span class="math display">\[
 \mathbb{D}_{K L}(P \| Q)=\sum_{i} P(i) \log
 \left(\frac{P(i)}{Q(i)}\right)
 \]</span></p>
@@ -3106,9 +3593,9 @@ x)}{\pi_{\mathrm{ref}}(y \mid x) e^{r_{\phi}(x, y) /
 \]</span></li>
 </ul>
 <p>构造新的概率分布：<span class="math inline">\(\pi^*(y\mid
-x)=\frac{\pi_{ref}(y\mid x)e^{r_\phi(x,y)/\beta}}{Z(x)}\)</span><br>
-为保证分布概率和等于1，进行归一化：<span class="math inline">\(Z(x)=\sum_y{\pi_{ref}(y\mid
-x)e^{r_\phi(x,y)/\beta}}\)</span></p>
+x)=\frac{\pi_{ref}(y\mid
+x)e^{r_\phi(x,y)/\beta}}{Z(x)}\)</span>，其中<span class="math inline">\(Z(x)=\sum_y{\pi_{ref}(y\mid
+x)e^{r_\phi(x,y)/\beta}}\)</span>，目的是归一化，保证分布概率和等于1</p>
 <p>带入上面的式子： <span class="math display">\[
 \begin{aligned}
 &amp;\Rightarrow \min_{\pi_\theta}\mathbb{E}_{x\sim D,y\sim
@@ -3154,7 +3641,29 @@ x})}{\pi_{ref}({y_{loss}\mid x})}\right)\right]\right\} \\
 &amp; = \textcolor{red}{\mathrm{dpo\_loss}}
 \end{aligned}
 \]</span> 证毕.</p>
-<h4 id="dpo-的局限性">DPO 的局限性</h4>
+<h4 id="dpo-的问题">DPO 的问题</h4>
+<ol type="1">
+<li>Bradley-Terry模型通常不能完美地拟合偏好数据。比如数据里 A &gt; B, B
+&gt; C. 正常来说 A&gt;C, 但是数据里如果有 C&gt; A,
+这样传递性就打破了。然而由于标注人员有可能是不同的人，对一些结果的看法可能天然就是不一样的</li>
+<li>将 Reward Model 隐含在 DPO 中，有好处也有坏处。比如有一个英文的
+Reward Model，现在要切换到中文领域，RLHF 可以通过 Prompt Engineering
+来作为一个初始版本的 Reward model 是可行的，但是 DPO
+则需要标注一些中文的对比语料才行</li>
+<li>DPO
+对基础模型和偏好数据之间的分布差异性特别敏感，如果基础模型和偏好数据有较大差异，则效果就不太好。比如用通用的模型和一份领域内的偏好数据</li>
+<li>实践中 DPO 很容易过拟合</li>
+</ol>
+<h4 id="训练tricks">训练tricks</h4>
+<ol type="1">
+<li>在使用 DPO 之前，一定要用与偏好数据同领域的数据进行
+SFT，不然效果一般都不太好，除非任务中y的好坏很容易区分</li>
+<li>尽量使用更多的数据。DPO
+很容易就能学到偏好，如果偏好数据比较少，很容易强行记住，哪怕是错误</li>
+<li>lr 比起 SFT 要小好几个数量级。比如 SFT 一般 lr 为 3e-4， 但是 DPO
+最好使用 1e-6/1e-7, 这个量级。太大了效果就不太好</li>
+</ol>
+<h4 id="扩展dpo-的局限性">扩展：DPO 的局限性</h4>
 <blockquote>
 <p><a href="https://arxiv.org/pdf/2404.04626">Towards Analyzing and
 Understanding the Limitations of DPO: A Theoretical
@@ -3225,6 +3734,18 @@ RLHF-PPO 相近甚至更稳定的对齐效果。</p>
 <blockquote>
 <p>https://github.com/OpenRLHF/OpenRLHF/blob/main/openRLHF/trainer/dpo_trainer.py</p>
 </blockquote>
+<h2 id="扩展问题">扩展问题</h2>
+<h3 id="rlhf-为什么不对-loss-直接进行梯度下降来求解">RLHF 为什么不对
+loss 直接进行梯度下降来求解？</h3>
+<p><span class="math display">\[J_{RLHF}=\max_{\pi_\theta}\mathbb{E}_{x\sim
+D,\textcolor{red}{y\sim \pi_\theta(y\mid
+x)}}\left[r_\phi(x,y)-\beta\mathbb{D}_{KL}[\pi_\theta(y\mid
+x)||\pi_{ref}(y\mid x)]\right]\]</span></p>
+<p>核心原因就是因为 <strong>loss
+或者优化目标不可微</strong>，看一下上式的红色部分。这里的 y
+是采样出来的，可能是 greedy，beam search
+等，这个操作在词汇表上进行采样或选择，而不是产生一个连续的、可微分的输出。所以也就没法直接梯度下降，而是采用
+TRPO/PPO 等策略梯度算法来求解。</p>
 <h2 id="进一步阅读">进一步阅读</h2>
 <p>[0] <a href="https://huyenchip.com/2023/05/02/RLHF.html">RLHF:
 Reinforcement Learning from Human Feedback</a><br>
@@ -3235,7 +3756,10 @@ LLMs</a><br>
 的</a><br>
 [3] <a href="https://www.bilibili.com/video/BV1Ao4y187GD/?spm_id_from=333.337.search-card.all.click">《John
 Schulman - Reinforcement Learning from Human Feedback: Progress and
-Challenges》</a></p>
+Challenges》</a><br>
+[4] <a href="https://www.interconnects.ai/p/rlhf-progress-scaling-dpo-to-70b">RLHF
+progress: Scaling DPO to 70B, DPO vs PPO update, Tülu 2, Zephyr-β,
+meaningful evaluation, data contamination</a></p>
 ]]></content>
       <categories>
         <category>LLMs</category>
