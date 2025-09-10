@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta name="referrer" content="no-referrer"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers/LLM 的词表应该选多大? | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="1. 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好2. 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果3. 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）  为什么词表越大越好 目前已经有很多研究表明，词表越大模型效果会更好 《Large Vocabulary">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers/LLM 的词表应该选多大? | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="1. 数据量够大的情况下，vocabulary 越大，压缩率越高，模型效果越好2. 太大的 vocabulary 需要做一些训练和推理的优化，所以要平衡计算和效果3. 要考虑内存对齐。vocabulary 的大小设置要是 8 的倍数，在 A100 上则是 64 的倍数（不同的GPU可能不一样）  为什么词表越大越好 目前已经有很多研究表明，词表越大模型效果会更好 《Large Vocabulary">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Transformers&#x2F;LLM 的词表应该选多大?">
 <meta property="og:url" content="https://ybqu.github.io/p/5b4d8163.html">
@@ -165,7 +165,7 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+}</script><meta name="referrer" content="no-referrer"/><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
   restartOnPushState: false
 }
 

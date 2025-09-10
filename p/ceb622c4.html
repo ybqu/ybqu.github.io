@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta name="referrer" content="no-referrer"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers中的Attention实现细节 | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Transformers 为什么采用 QKV Attention  注意：在看下面这篇论文之前，最好熟悉一下最原始的 Bahdanau Attention(参考知乎｜详解Bahdanau Attention)，这是一切 Attention 的起点。把 Bahdanau Attention 研究明白了对于理解 Transformers 的结构有很大帮助  Transformers 的论文在 Att">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers中的Attention实现细节 | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Transformers 为什么采用 QKV Attention  注意：在看下面这篇论文之前，最好熟悉一下最原始的 Bahdanau Attention(参考知乎｜详解Bahdanau Attention)，这是一切 Attention 的起点。把 Bahdanau Attention 研究明白了对于理解 Transformers 的结构有很大帮助  Transformers 的论文在 Att">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Transformers中的Attention实现细节">
 <meta property="og:url" content="https://ybqu.github.io/p/ceb622c4.html">
@@ -164,7 +164,7 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+}</script><meta name="referrer" content="no-referrer"/><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
   restartOnPushState: false
 }
 

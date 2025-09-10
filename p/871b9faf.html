@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta name="referrer" content="no-referrer"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers为什么使用LayerNorm | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Transformers 中为什么使用 LayerNorm 而不是其他的？比如 BatchNorm?  为什么使用 LayerNorm 不仅仅是使用 LayerNorm，各种 Normalize 的操作，目的都是：  为了保证训练的稳定性：因为当神经网络很深的时候，反向传播的参数计算往往都是指数级的变化，太大或者太小的数值送入激活函数后就容易造成梯度消失或者梯度爆炸，训练就挂了 加速模型的收敛：">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers为什么使用LayerNorm | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Transformers 中为什么使用 LayerNorm 而不是其他的？比如 BatchNorm?  为什么使用 LayerNorm 不仅仅是使用 LayerNorm，各种 Normalize 的操作，目的都是：  为了保证训练的稳定性：因为当神经网络很深的时候，反向传播的参数计算往往都是指数级的变化，太大或者太小的数值送入激活函数后就容易造成梯度消失或者梯度爆炸，训练就挂了 加速模型的收敛：">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Transformers为什么使用LayerNorm">
 <meta property="og:url" content="https://ybqu.github.io/p/871b9faf.html">
@@ -164,7 +164,7 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+}</script><meta name="referrer" content="no-referrer"/><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
   restartOnPushState: false
 }
 

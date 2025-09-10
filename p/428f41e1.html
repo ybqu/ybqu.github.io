@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta name="referrer" content="no-referrer"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>为什么需要KVCache | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="KV Cache 是 Transformer 标配的推理加速功能，transformer 官方 use_cache 这个参数默认是 True，但是它只能用于 Decoder 架构的模型，这是因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 K 和 V 可以缓存起来。  我们先看一下不使用 KV Cac">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>为什么需要KVCache | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="KV Cache 是 Transformer 标配的推理加速功能，transformer 官方 use_cache 这个参数默认是 True，但是它只能用于 Decoder 架构的模型，这是因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 K 和 V 可以缓存起来。  我们先看一下不使用 KV Cac">
 <meta property="og:type" content="article">
 <meta property="og:title" content="为什么需要KVCache">
 <meta property="og:url" content="https://ybqu.github.io/p/428f41e1.html">
@@ -164,7 +164,7 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+}</script><meta name="referrer" content="no-referrer"/><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
   restartOnPushState: false
 }
 

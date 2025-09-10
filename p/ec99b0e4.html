@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta name="referrer" content="no-referrer"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>DeepSeek-MLA在prefill和decode时算子不同根本原因 | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="prefill是compute bound，首要任务是解决算的慢问题(要牺牲存储，换取计算) decode是memory bound，首要任务是解决显存占用多和访存慢问题(要牺牲计算，换取存储)  通过下面对两阶段的几个互相成对的问题，我们从compute bound和memory bound的角度，来深入感受下为啥deepseek的MLA要在这俩阶段用不同的算子： Prefill阶段 为什么要">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>DeepSeek-MLA在prefill和decode时算子不同根本原因 | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="prefill是compute bound，首要任务是解决算的慢问题(要牺牲存储，换取计算) decode是memory bound，首要任务是解决显存占用多和访存慢问题(要牺牲计算，换取存储)  通过下面对两阶段的几个互相成对的问题，我们从compute bound和memory bound的角度，来深入感受下为啥deepseek的MLA要在这俩阶段用不同的算子： Prefill阶段 为什么要">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DeepSeek-MLA在prefill和decode时算子不同根本原因">
 <meta property="og:url" content="https://ybqu.github.io/p/ec99b0e4.html">
@@ -166,7 +166,7 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+}</script><meta name="referrer" content="no-referrer"/><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
   restartOnPushState: false
 }
 

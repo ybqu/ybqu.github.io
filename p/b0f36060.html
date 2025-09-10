@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta name="referrer" content="no-referrer"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers 的 LayerNorm 可以并行么？ | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="\[\sigma^2 &#x3D; \frac{1}{N} \sum_{i&#x3D;1}^N (x_i)^2 - \mu^2\]  并行的时候，一边算平方和，一边算全部的和。最后平方和与均值都可以算出来，然后按公式一减就出来了 ! 但是受限于计算机计算精度的问题，这个公式当两个平方项都很大时，精度会失真，导致算出来的方差很不稳定，甚至有可能是负数  Transfromers 无论是在 pytorch，还是在 ape">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Transformers 的 LayerNorm 可以并行么？ | DouDou's blog</title><meta name="author" content="DouDou.Ybqu"><meta name="copyright" content="DouDou.Ybqu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="\[\sigma^2 &#x3D; \frac{1}{N} \sum_{i&#x3D;1}^N (x_i)^2 - \mu^2\]  并行的时候，一边算平方和，一边算全部的和。最后平方和与均值都可以算出来，然后按公式一减就出来了 ! 但是受限于计算机计算精度的问题，这个公式当两个平方项都很大时，精度会失真，导致算出来的方差很不稳定，甚至有可能是负数  Transfromers 无论是在 pytorch，还是在 ape">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Transformers 的 LayerNorm 可以并行么？">
 <meta property="og:url" content="https://ybqu.github.io/p/b0f36060.html">
@@ -165,7 +165,7 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
+}</script><meta name="referrer" content="no-referrer"/><meta name="generator" content="Hexo 7.3.0"></head><body><script>window.paceOptions = {
   restartOnPushState: false
 }
 
